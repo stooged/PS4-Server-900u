@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP Server</title>
+<link rel="stylesheet" href="style.css">
+<script>
+
+async function showMessage(msg) {
+	document.getElementById("alert").innerHTML = "<font size=4>" + msg + "</font>";
+	document.getElementById("alert").style.display='block';
+	await new Promise(wait => setTimeout(wait, 5000));
+	document.getElementById("alert").style.display='none';
+	document.getElementById("alert").innerHTML = '';
+}
+
+async function sendpayload(payload,title)
+{
+	function handleError(e) {
+	    showMessage("Error: no wifi?<br>The ESP8266 is required to send payloads.");
+	}
+	
+	showMessage("Loading: " + title + " ...");
+	await new Promise(wait => setTimeout(wait, 200));
+    var getpl = new XMLHttpRequest();
+    getpl.open("POST", "./" + payload, false);
+	getpl.addEventListener("error", handleError);
+	getpl.onload = function(e) {
+	if (this.status == 200) {
+	   showMessage(title + " sent.");
+	}
+	else
+	{
+	   showMessage("Error: Failed to connect to the bin loader server<br>Restart the binloader server."); 
+	}
+	
+	};
+    getpl.send(null);
+}
+
+</script>
+</head>
+<body>
+<center>
+<h1>9.00 Payloads</h1>
+<a href="hen.html" target="_self"><button class="btn">GoldHEN v2.0b</button></a>&nbsp;
+<p></p><br>
+<a onclick="sendpayload('app2.bin','AppToUsb')"><button class="btn">AppToUsb</button></a>&nbsp;
+<a onclick="sendpayload('hist.bin','History Blocker')"><button class="btn">History Blocker</button></a>&nbsp;
+<a onclick="sendpayload('appd.bin','App Dumper')"><button class="btn">App Dumper</button></a>&nbsp;
+<p></p><br>
+<div class="alert" id="alert"></div>
+</center>
+</body>
+</html>

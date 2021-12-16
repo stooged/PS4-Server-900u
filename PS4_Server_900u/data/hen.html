@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>ESP Server</title>
+<style>
+body{
+color:white;font-size:20px;text-align:center;margin:0;overflow:hidden;
+}
+
+.info{overflow: hidden;position: fixed;position: absolute;top: 45%;left: 50%;font-size: 25px;font-family: sans-serif;color: #b8b8b8;transform: translate(-50%, -50%);
+}
+</style>
+<script>
+
+var getpl = new XMLHttpRequest();
+getpl.open("POST", "./usboff", true);
+getpl.send(null);
+
+function awaitpl() {
+document.getElementById("loader").style.display = "none";
+document.getElementById("awaiting").style.display = "block";
+}
+function ghdone() {
+document.getElementById("loader").style.display = "none";
+document.getElementById("done").style.display = "block";
+var getpl = new XMLHttpRequest();
+getpl.open("POST", "./usboff", true);
+getpl.send(null);
+}
+</script>
+<script src="./int64.js"></script>
+<script src="./rop.js"></script>
+<script src="./kexploit.js"></script>
+<script src="./webkit.js"></script>
+</head>
+<body onload="setTimeout(poc, 1500);">
+<div id="loader" class="info">Loading Exploit, Please Wait ...</div>
+<div id="awaiting" class="info" style="display:none;">Send Payload To Port 9020</div>
+<div id="done" class="info" style="display:none;">All Done.</div>
+</body>
+<script>
+</script>
+</html>
