@@ -14,6 +14,7 @@ you can make it with a usb A female to male cable, this is a basic diagram of ho
 
 
 this is the mod i did and the parts used are:
+<br>
 <b>
 D1 Mini Pro v1 ESP8266 board.
 
