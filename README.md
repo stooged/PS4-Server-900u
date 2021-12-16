@@ -34,4 +34,5 @@ some pictures of the mod:
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/6.jpg><br>
 
 the end result:
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/8.jpg><br>
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/7.jpg><br>
