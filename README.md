@@ -11,6 +11,8 @@ you can make it with a usb A female to male cable, this is a basic diagram of ho
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/diag.jpg><br>
 
+<br><br>
+
 fast and dirty, this the the test cable i made and this would be the easiest for people to make.
 
 parts used are:<b>
