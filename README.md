@@ -8,9 +8,7 @@ i have added the ability to switch off and on the usb device by using the pin D7
 the idea is to cut the 5v power to the usb drive and have it switched on and off by a relay which is controlled by the esp8266 device and switch it off and on during the initial exploit load which removes the need to plug and unplug the usb drive.
 
 
-<a href="https://youtu.be/WrJMKA0y-Lg" target="_blank">
- <img src="https://img.youtube.com/vi/WrJMKA0y-Lg/mqdefault.jpg" alt="video" width="240" height="180" border="10" />
-</a>
+<a href="https://youtu.be/WrJMKA0y-Lg" target="_blank">Video</a>
 
 
 you can make it with a usb A female to male cable, this is a basic diagram of how to set it up.
