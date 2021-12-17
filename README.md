@@ -36,3 +36,21 @@ some pictures of the mod:
 the end result:
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/8.jpg><br>
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/7.jpg><br>
+
+<br><br>
+
+the slim usb hub has less room but you should be able to fit the board in and use a reed relay to save a bit of space, i dont have a slim so i wont bother making this one but it is the same idea as the other mod.
+
+<a href=http://www.dobe-game.com/en/productshow-54-167.html>PS4 Slim USB HUB TP4-821</a>
+BESTAR  BR-500  Reed Relay (5V, 500Ω)
+
+D1 Mini Pro v1 ESP8266 board.
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/9.jpg><br>
+
+
+<br><br>
+
+the usb hub for the pro is still coming in the post and i will mod that one next.
+
+<a href=http://www.dobe-game.com/en/productshow-53-177.html>PS4 Pro USB HUB TP4-832</a>
