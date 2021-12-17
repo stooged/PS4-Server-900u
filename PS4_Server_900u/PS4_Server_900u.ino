@@ -777,10 +777,10 @@ digitalWrite(13, LOW);
 
 
 void loop(void) {
-  dnsServer.processNextRequest();
-  webServer.handleClient();
-  if (hasEnabled && millis() >= (enTime + 20000))
+  if (hasEnabled && millis() >= (enTime + 15000))
   {
     disableUSB();
   } 
+  dnsServer.processNextRequest();
+  webServer.handleClient();
 }
