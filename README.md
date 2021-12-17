@@ -13,7 +13,7 @@ you can make it with a usb A female to male cable, this is a basic diagram of ho
 
 <br><br>
 
-fast and dirty, this the the test cable i made and this would be the easiest for people to make.
+fast and dirty, this is the test cable i made and this would be the easiest for people to make.
 
 parts used are:<b>
 
