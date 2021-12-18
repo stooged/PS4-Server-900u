@@ -10,24 +10,13 @@ color:white;font-size:20px;text-align:center;margin:0;overflow:hidden;
 }
 </style>
 <script>
-
-function disableUSB() {
-var getpl = new XMLHttpRequest();
-getpl.open("POST", "./usboff", true);
-getpl.send(null);
-}
-
-disableUSB();
-
 function awaitpl() {
 document.getElementById("loader").style.display = "none";
 document.getElementById("awaiting").style.display = "block";
-disableUSB();
 }
 function ghdone() {
 document.getElementById("loader").style.display = "none";
 document.getElementById("done").style.display = "block";
-disableUSB();
 }
 </script>
 <script src="./int64.js"></script>
