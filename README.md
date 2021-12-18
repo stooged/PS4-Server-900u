@@ -13,7 +13,14 @@ the idea is to cut the 5v power to the usb drive and have it switched on and off
 
 you can make it with a usb A female to male cable, this is a basic diagram of how to set it up.
 
+<b>TRR1A05D00 5 Volt SPST DIL Reed Relay
+
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/diag.jpg><br>
+
+BESTAR  BR-500  Reed Relay (5V, 500Ω)</b>
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/diag1.jpg><br>
+
 
 <br><br>
 
