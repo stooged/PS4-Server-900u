@@ -41,7 +41,7 @@ BESTAR  BR-500  Reed Relay (5V, 500Ω)
 
 i ended up 3d printing a small box to hold the relay and ESP8266 for the cable mod, i filled the relay/wires side with hot glue and glued the box together.
 
-the files for the box are in the <a href=https://github.com/stooged/PS4-Server-900u/tree/main/STL>STL</a>folder and it can be printed with PLA and no supports are needed.
+the files for the box are in the <a href=https://github.com/stooged/PS4-Server-900u/tree/main/STL>STL</a> folder and it can be printed with PLA and no supports are needed.
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/11.jpg><br>
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/13.jpg><br>
