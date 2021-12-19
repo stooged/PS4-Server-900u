@@ -20,11 +20,11 @@ f.close()
 template= ""
 templatefile = "template.dat"
 if len(jsreq) > 0:templatefile = "jsreq-template.dat"
-with open (templatefile, "r") as f:
+with open (templatefile, "r", encoding="utf-8") as f:
     template=f.read()
 f.close()
 template = template.replace('##PAYLOAD##', payloadjs) 
 indextmp = template.replace('##BUF##', str(filesize)) 
-f = open(filename.replace('.bin','.html'), 'w+') 
+f = open(filename.replace('.bin','.html'), 'w+', encoding="utf-8") 
 f.write(indextmp)
 f.close()
