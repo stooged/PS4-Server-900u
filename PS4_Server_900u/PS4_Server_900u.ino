@@ -476,7 +476,7 @@ void handlePayloads() {
     String fname = String(entry.name()).substring(1);
     if (fname.length() > 0)
     {
-    if (fname.endsWith(".html") && fname != "index.html")
+    if (fname.endsWith(".html") && fname != "index.html" && fname != "payloads.html")
     {
     String fnamev = fname;
     fnamev.replace(".html","");
