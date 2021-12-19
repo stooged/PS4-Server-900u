@@ -180,7 +180,12 @@ void handleBinload(String pload)
 
 bool loadFromSdCard(String path) {
 //Serial.println(path);
-
+ if (path.equals("/connecttest.txt"))
+ {
+  webServer.setContentLength(22);
+  webServer.send(200, "text/plain", "Microsoft Connect Test");
+  return true;
+ }
  if (path.equals("/config.ini"))
  {
   return false;
@@ -225,11 +230,12 @@ bool loadFromSdCard(String path) {
   
   String dataType = getContentType(path);
 
-  if (path.endsWith(".js")) {
-    path = path + ".gz";
+  File dataFile;
+  dataFile = SPIFFS.open(path + ".gz", "r");
+  if (!dataFile) {
+    dataFile = SPIFFS.open(path, "r");
   }
   
-  File dataFile = SPIFFS.open(path, "r");
   if (!dataFile) {
      if (path.endsWith("index.html") || path.endsWith("index.htm"))
      {
@@ -476,6 +482,9 @@ void handlePayloads() {
     String fname = String(entry.name()).substring(1);
     if (fname.length() > 0)
     {
+      if (fname.endsWith(".gz")) {
+        fname = fname.substring(0, fname.length() - 3);
+      }
     if (fname.endsWith(".html") && fname != "index.html" && fname != "payloads.html")
     {
     String fnamev = fname;
