@@ -6,12 +6,21 @@
 <script src="./int64.js"></script>
 <script src="./rop.js"></script>
 <script>
-
-function ghdone() 
-{document.getElementById("loader").style.display = "none";
-document.getElementById("done").style.display = "block";
+function payloadmsg() 
+{
+    document.getElementById("done").style.display = "none";
+    document.getElementById("exploit").style.display = "none";
+    document.getElementById("payload").style.display = "block";
 }
 
+function donemsg() 
+{
+    document.getElementById("exploit").style.display = "none";
+    document.getElementById("payload").style.display = "none";
+    document.getElementById("done").style.display = "block";
+}
+</script>
+<script>
 var chain;
 var kchain;
 var kchain2;
@@ -298,7 +307,7 @@ function injectPayload() //single payload inject for both conditions/removed nee
 	chain.syscall(74, payload_loader, ##BUF##, (0x1 | 0x2 | 0x4));
 	var pthread = p.malloc(0x10);
 	chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
-	ghdone();
+	donemsg();
 }
 
 
@@ -309,8 +318,9 @@ function run_hax() {
        kernel();
 	   //this wk exploit is pretty stable we can probably afford to kill webkit before payload loader but should we?.
     }
-	// load payload mod / html payloads - stooged
-	injectPayload();
+	// load payload mod / html payloads with delay - stooged
+	payloadmsg();
+	setTimeout(injectPayload, 3000);
 }
 
 
@@ -613,7 +623,6 @@ var trigger_spray = function () {
     chain.run();
 	if (chain.syscall(23, 0).low == 0) {
 		disableUSB();
-		alert("exploit success, load payload?");
 		return;
 	}
 	disableUSB();
@@ -625,7 +634,8 @@ var trigger_spray = function () {
 <script src="./webkit.js"></script>
 </head>
 <body onload="setTimeout(poc, 1500);">
-<div id="loader" class="info">Loading Payload, Please Wait ...</div>
+<div id="exploit" class="info">Loading Exploit, Please Wait ...</div>
+<div id="payload" class="info" style="display:none;">Loading Payload...</div>
 <div id="done" class="info" style="display:none;">Payload Loaded.</div>
 </body>
 </html>

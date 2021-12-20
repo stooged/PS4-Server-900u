@@ -25,7 +25,7 @@ with open (templatefile, "r", encoding="utf-8") as f:
     template=f.read()
 f.close()
 template = template.replace('##PAYLOAD##', payloadjs) 
-indextmp = template.replace('##BUF##', hex(filesize + 4)) 
+indextmp = template.replace('##BUF##', str(filesize + 4)) 
 f = gzip.open(filename.replace('.bin','.html.gz'), 'wb')
 f.write(indextmp.encode("utf-8"))
 f.close()
