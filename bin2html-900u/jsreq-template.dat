@@ -291,7 +291,7 @@ function injectPayload() //single payload inject for both conditions/removed nee
 	##PAYLOAD##
 	var payload_loader = p.malloc32(##BUF##);
 	var loader_writer = payload_loader.backing;
-	for(var i=0; i < (payload.length); i++)
+	for(var i=0; i < (payload.length - 1); i++)
 	{
 		loader_writer[i] = payload[i];
 	}

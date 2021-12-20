@@ -15,7 +15,7 @@ with open(filename, 'rb') as f:
         output = binascii.hexlify(chnk[::-1])
         payloadjs = payloadjs + "0X%s," % output.decode('utf-8')
         chnk = f.read(4)
-payloadjs = payloadjs + "];"
+payloadjs = payloadjs + "0X00000000];"
 f.close()
 template= ""
 templatefile = "template.dat"
@@ -23,9 +23,8 @@ if len(jsreq) > 0:templatefile = "jsreq-template.dat"
 with open (templatefile, "r", encoding="utf-8") as f:
     template=f.read()
 f.close()
-payloadjs = payloadjs.replace(',];', '];') 
 template = template.replace('##PAYLOAD##', payloadjs) 
-indextmp = template.replace('##BUF##', str(filesize)) 
+indextmp = template.replace('##BUF##', str(filesize + 4)) 
 f = open(filename.replace('.bin','.html'), 'w+', encoding="utf-8") 
 f.write(indextmp)
 f.close()
