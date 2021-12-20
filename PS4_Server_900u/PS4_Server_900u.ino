@@ -62,6 +62,7 @@ String formatBytes(size_t bytes){
 
 void disableUSB()
 {
+   webServer.send(200, "text/plain", "ok");
    enTime = 0;
    hasEnabled = false;
    digitalWrite(13, LOW);
@@ -69,6 +70,7 @@ void disableUSB()
 
 void enableUSB()
 {
+   webServer.send(200, "text/plain", "ok");
    digitalWrite(13, HIGH);
    enTime = millis();
    hasEnabled = true;
