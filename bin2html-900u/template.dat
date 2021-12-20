@@ -879,6 +879,7 @@ var trigger_spray = function () {
     chain.run();
 	if (chain.syscall(23, 0).low == 0) {
 		disableUSB();
+		alert("exploit success, load payload?");
 		return;
 	}
 	disableUSB();
