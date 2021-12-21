@@ -29,7 +29,7 @@ the parts required are:
 
 <b>1k resistor<br>
 1.1k resistor<br>
-BC 548 NPN thransistor</b>
+BC 548 NPN transistor</b>
 
 this is a basic diagram of how to set that up.
 
