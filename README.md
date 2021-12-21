@@ -27,8 +27,8 @@ another way to set it up is to use a npn transistor and cut the ground to the us
 
 the parts required are: 
 
-<b>1k resistor
-1.1k resistor 
+<b>1k resistor<br>
+1.1k resistor<br>
 BC 548 NPN thransistor</b>
 
 this is a basic diagram of how to set that up.
