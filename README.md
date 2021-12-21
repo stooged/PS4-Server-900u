@@ -23,15 +23,15 @@ BESTAR  BR-500  Reed Relay (5V, 500Ω)</b>
 
 <br>
 
-another way to set it up is to use a npn transistor and cut the ground to the usb device which was shown by <b>blumenal</b> over on psxhax.
+another way to set it up is to use a npn transistor and cut the ground to the usb device which was shown by <b><a href=https://www.psxhax.com/threads/ps4-server-9-00-ps4-server-9-00u-for-esp8266-d1-mini-pro-by-stooged.10685/post-189470>blumenal</a></b> over on psxhax.
 
 the parts required are: 
 
-1k resistor
+<b>1k resistor
 
 1.1k resistor 
 
-BC 548 NPN thransistor
+BC 548 NPN thransistor</b>
 
 this is a basic diagram of how to set that up.
 
