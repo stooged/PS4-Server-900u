@@ -21,6 +21,22 @@ BESTAR  BR-500  Reed Relay (5V, 500Ω)</b>
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/diag1.jpg><br>
 
+<br>
+
+another way to set it up is to use a npn transistor and cut the ground to the usb device which was shown by <b>blumenal</b> over on psxhax.
+
+the parts required are: 
+
+1k resistor
+
+1.1k resistor 
+
+BC 548 NPN thransistor
+
+this is a basic diagram of how to set that up.
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/diag2.jpg><br>
+
 
 <br><br>
 
