@@ -66,7 +66,7 @@ the files for the box are in the <a href=https://github.com/stooged/PS4-Server-9
 
 
 
-i made a poc cable to test blumenal's method and it works perfectly so if you can source those parts it is an alternative to the relay, the code needs no changes for either method to work.
+i made a cable to test blumenal's method and it works perfectly so if you can source those parts it is an alternative to the relay, the code needs no changes for either method to work.
 
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/14.jpg><br>
