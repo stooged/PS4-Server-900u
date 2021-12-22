@@ -475,6 +475,15 @@ void handleFileMan() {
 }
 
 
+void handlePayloads() { //temp function to prompt people to upload the sketch data
+  String image = "";
+  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>PS4 Server</title><style>.btn {background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover {background-color: RoyalBlue;}body {background-color: #1451AE; color: #ffffff; text-shadow: 3px 2px DodgerBlue;)</style></head><body><center><h1>Sketch data or index.html missing</h1>";
+  output += "You need to upload the exploit files to the ESP8266 board.<br>in the arduino ide select <b>Tools</b> &gt; <b>ESP8266 Sketch Data Upload</b></center></body></html>";
+  webServer.setContentLength(output.length());
+  webServer.send(200, "text/html", output);
+}
+
+/*
 void handlePayloads() {
   Dir dir = SPIFFS.openDir("/");
   String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>PS4 Server</title><style>.btn {background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover {background-color: RoyalBlue;}body {background-color: #1451AE; color: #ffffff; text-shadow: 3px 2px DodgerBlue;)</style></head><body><center><h1>PS4 Payloads</h1>";
@@ -506,7 +515,7 @@ void handlePayloads() {
   webServer.setContentLength(output.length());
   webServer.send(200, "text/html", output);
 }
-
+*/
 
 void handleConfig()
 {
