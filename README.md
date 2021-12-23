@@ -103,7 +103,7 @@ the end result:
 
 <br><br>
 
-the slim usb hub has less room but you should be able to fit the board in and use a reed relay to save a bit of space.
+the slim usb hub has less room but you can just fit the board in.
 
 <b>
 <a href=http://www.dobe-game.com/en/productshow-54-167.html>PS4 Slim USB HUB TP4-821</a>
