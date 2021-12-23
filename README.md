@@ -103,16 +103,17 @@ the end result:
 
 <br><br>
 
-the slim usb hub has less room but you should be able to fit the board in and use a reed relay to save a bit of space, i dont have a slim so i wont bother making this one but it is the same idea as the other mod.
+the slim usb hub has less room but you should be able to fit the board in and use a reed relay to save a bit of space.
 
 <b>
 <a href=http://www.dobe-game.com/en/productshow-54-167.html>PS4 Slim USB HUB TP4-821</a>
 
-BESTAR  BR-500  Reed Relay (5V, 500Ω)
+TRR1A05D00 5 Volt SPST DIL Reed Relay.
 
-D1 Mini Pro v1 ESP8266 board.</b>
+D1 Mini ESP8266 board.</b>
 
-<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/9.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/16.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/17.jpg><br>
 
 
 <br><br>

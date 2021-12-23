@@ -9,7 +9,7 @@ DNSServer dnsServer;
 ESP8266WebServer webServer;
 boolean hasEnabled = false;
 long enTime = 0;
-
+int usbPin = 13;
 File upFile;
 
 String firmwareVer = "1.00";
@@ -65,13 +65,13 @@ void disableUSB()
    webServer.send(200, "text/plain", "ok");
    enTime = 0;
    hasEnabled = false;
-   digitalWrite(13, LOW);
+   digitalWrite(usbPin, LOW);
 }
 
 void enableUSB()
 {
    webServer.send(200, "text/plain", "ok");
-   digitalWrite(13, HIGH);
+   digitalWrite(usbPin, HIGH);
    enTime = millis();
    hasEnabled = true;
 }
@@ -693,8 +693,8 @@ void writeConfig()
 void setup(void) 
 {
 
-pinMode(13, OUTPUT); 
-digitalWrite(13, LOW);
+pinMode(usbPin, OUTPUT); 
+digitalWrite(usbPin, LOW);
   
   //Serial.begin(115200);
   //Serial.setDebugOutput(true);
