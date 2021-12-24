@@ -77,7 +77,7 @@ i made a cable to test blumenal's method and it works perfectly so if you can so
 <br><br>
 
 
-#H1 PS4 PHAT
+# PS4 PHAT
 
 the parts used are:
 <br>
@@ -105,7 +105,7 @@ the end result:
 
 <br><br>
 
-#H1 #PS4 SLIM
+# PS4 SLIM
 
 the slim usb hub has less room but you can just fit the board in.
 
@@ -125,7 +125,7 @@ D1 Mini ESP8266 board.</b>
 <br><br>
 
 
-#H1 #PS4 PRO
+# PS4 PRO
 
 the usb hub for the pro.
 
