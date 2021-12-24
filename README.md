@@ -77,7 +77,9 @@ i made a cable to test blumenal's method and it works perfectly so if you can so
 <br><br>
 
 
-this is the hub mod i did and the parts used are:
+#PS4 PHAT
+
+the parts used are:
 <br>
 <b>
 D1 Mini Pro v1 ESP8266 board.
@@ -103,7 +105,11 @@ the end result:
 
 <br><br>
 
+#PS4 SLIM
+
 the slim usb hub has less room but you can just fit the board in.
+
+the parts used are:
 
 <b>
 <a href=http://www.dobe-game.com/en/productshow-54-167.html>PS4 Slim USB HUB TP4-821</a>
@@ -118,10 +124,29 @@ D1 Mini ESP8266 board.</b>
 
 <br><br>
 
-the usb hub for the pro is still coming in the post and i will mod that one next.
+
+#PS4 PRO
+
+the usb hub for the pro.
+
+the parts used are:
 
 <a href=http://www.dobe-game.com/en/productshow-53-177.html>PS4 Pro USB HUB TP4-832</a>
 
-...
+TRR1A05D00 5 Volt SPST DIL Reed Relay.
 
-...
+D1 Mini Pro v1 ESP8266 board.
+
+SanDisk Ultra Fit 8gb usb drive
+
+this one was a little different i removed one of the usb ports and pulled the chip out of the usb drive and soldered it directly into the hub and then blocked the hole for the port i removed.
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/18.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/19.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/20.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/21.jpg><br>
+
+the end result:
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/22.jpg><br>
+
+<br>
