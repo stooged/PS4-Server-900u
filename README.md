@@ -38,7 +38,9 @@ this is a basic diagram of how to set that up.
 
 <br><br>
 
-fast and dirty, this is the test cable i made and this would be the easiest for people to make.
+# Cable Mods
+
+this is the test cable i made and this would be the easiest for people to make.
 
 parts used are:<b>
 
