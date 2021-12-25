@@ -82,7 +82,7 @@ i made a cable to test blumenal's method and it works perfectly so if you can so
 
 # Usb Chip In Box
 
-i made this cable for a friend and i decided to solder the usb chip into circuit and i made a box for a single usb cable.
+i made this cable for a friend and i decided to solder the usb chip into the circuit and i made a box for a single usb cable.
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/23.jpg><br>
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/24.jpg><br>
