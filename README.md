@@ -80,6 +80,22 @@ i made a cable to test blumenal's method and it works perfectly so if you can so
 <br><br>
 
 
+# Usb Chip In Box
+
+i made this cable for a friend and i decided to solder the usb chip into circuit and i made a box for a single usb cable.
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/23.jpg><br>
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/24.jpg><br>
+
+the end result:
+
+<img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/25.jpg><br>
+
+
+
+<br><br>
+
+
 # PS4 PHAT
 
 the parts used are:
@@ -122,6 +138,9 @@ TRR1A05D00 5 Volt SPST DIL Reed Relay.
 D1 Mini ESP8266 board.</b>
 
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/16.jpg><br>
+
+the end result:
+
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/17.jpg><br>
 
 
