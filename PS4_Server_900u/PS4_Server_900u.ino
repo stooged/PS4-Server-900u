@@ -11,15 +11,25 @@ boolean hasEnabled = false;
 long enTime = 0;
 int usbPin = 13;
 File upFile;
-
 String firmwareVer = "1.00";
 
+
 //-------------------DEFAULT SETTINGS------------------//
+
+//create access point
+boolean startAP = true;
 String AP_SSID = "PS4_WEB_AP";
 String AP_PASS = "password";
-int WEB_PORT = 80;
 IPAddress Server_IP(10,1,1,1);
 IPAddress Subnet_Mask(255,255,255,0);
+
+//connect to wifi
+boolean connectWifi = false;
+String WIFI_SSID = "Home_WIFI";
+String WIFI_PASS = "password";
+
+//server port
+int WEB_PORT = 80;
 //-----------------------------------------------------//
 
 
@@ -181,7 +191,7 @@ void handleBinload(String pload)
 
 
 bool loadFromSdCard(String path) {
-//Serial.println(path);
+Serial.println(path);
  if (path.equals("/connecttest.txt"))
  {
   webServer.setContentLength(22);
@@ -258,7 +268,7 @@ bool loadFromSdCard(String path) {
   }
   
   if (webServer.streamFile(dataFile, dataType) != dataFile.size()) {
-    //Serial.println("Sent less data than expected!");
+    Serial.println("Sent less data than expected!");
   }
   dataFile.close();
   return true;
@@ -281,7 +291,7 @@ void handleNotFound() {
     message += " NAME:" + webServer.argName(i) + "\n VALUE:" + webServer.arg(i) + "\n";
   }
   webServer.send(404, "text/plain", "Not Found");
-  //Serial.print(message);
+  Serial.print(message);
 }
 
 void handleFileUpload() {
@@ -345,7 +355,7 @@ void updateFw()
 {
   if (SPIFFS.exists("/fwupdate.bin")) {
   File updateFile;
-  //Serial.println("Update file found");
+  Serial.println("Update file found");
   updateFile = SPIFFS.open("/fwupdate.bin", "r");
  if (updateFile) {
   size_t updateSize = updateFile.size();
@@ -354,7 +364,7 @@ void updateFw()
     md5.addStream(updateFile,updateSize);
     md5.calculate();
     String md5Hash = md5.toString();
-    //Serial.println("Update file hash: " + md5Hash);
+    Serial.println("Update file hash: " + md5Hash);
     updateFile.close();
     updateFile = SPIFFS.open("/fwupdate.bin", "r");
   if (updateFile) {
@@ -372,7 +382,7 @@ void updateFw()
     char md5Buf[md5BufSize];
     md5Hash.toCharArray(md5Buf, md5BufSize) ;
     Update.setMD5(md5Buf);
-    //Serial.println("Updating firmware...");
+    Serial.println("Updating firmware...");
    long bsent = 0;
    int cprog = 0;
     while (updateFile.available()) {
@@ -383,15 +393,15 @@ void updateFw()
       int progr = ((double)bsent /  updateSize)*100;
       if (progr >= cprog) {
         cprog = progr + 10;
-      //Serial.println(String(progr) + "%");
+      Serial.println(String(progr) + "%");
       }
     }
     updateFile.close(); 
   if (Update.end(true))
   {
   digitalWrite(BUILTIN_LED, HIGH);
-  //Serial.println("Installed firmware hash: " + Update.md5String()); 
-  //Serial.println("Update complete");
+  Serial.println("Installed firmware hash: " + Update.md5String()); 
+  Serial.println("Update complete");
   SPIFFS.remove("/fwupdate.bin");
   sendwebmsg("Uploaded file hash: " + md5Hash + "<br>Installed firmware hash: " + Update.md5String() + "<br><br>Update complete, Rebooting.");
   delay(1000);
@@ -400,14 +410,14 @@ void updateFw()
   else
   {
     digitalWrite(BUILTIN_LED, HIGH);
-    //Serial.println("Update failed");
+    Serial.println("Update failed");
     sendwebmsg("Update failed");
      //Update.printError(Serial);
     }
   }
   }
   else {
-  //Serial.println("Error, file is invalid");
+  Serial.println("Error, file is invalid");
   updateFile.close(); 
   digitalWrite(BUILTIN_LED, HIGH);
   SPIFFS.remove("/fwupdate.bin");
@@ -418,7 +428,7 @@ void updateFw()
   }
   else
   {
-    //Serial.println("No update file found");
+    Serial.println("No update file found");
     sendwebmsg("No update file found");
   }
 }
@@ -426,7 +436,7 @@ void updateFw()
 
 void handleFormat()
 {
-  //Serial.print("Formatting SPIFFS");
+  Serial.print("Formatting SPIFFS");
   SPIFFS.end();
   SPIFFS.format();
   SPIFFS.begin();
@@ -519,16 +529,28 @@ void handlePayloads() {
 
 void handleConfig()
 {
-  if(webServer.hasArg("ap_ssid") && webServer.hasArg("ap_pass") && webServer.hasArg("web_ip") && webServer.hasArg("web_port") && webServer.hasArg("subnet")) 
+  if(webServer.hasArg("ap_ssid") && webServer.hasArg("ap_pass") && webServer.hasArg("web_ip") && webServer.hasArg("web_port") && webServer.hasArg("subnet") && webServer.hasArg("wifi_ssid") && webServer.hasArg("wifi_pass")) 
   {
     AP_SSID = webServer.arg("ap_ssid");
-    AP_PASS = webServer.arg("ap_pass");
+    if (!webServer.arg("ap_pass").equals("********"))
+    {
+      AP_PASS = webServer.arg("ap_pass");
+    }
+    WIFI_SSID = webServer.arg("wifi_ssid");
+    if (!webServer.arg("wifi_pass").equals("********"))
+    {
+      WIFI_PASS = webServer.arg("wifi_pass");
+    }
     String tmpip = webServer.arg("web_ip");
     String tmpwport = webServer.arg("web_port");
     String tmpsubn = webServer.arg("subnet");
+    String tmpua = "false";
+    String tmpcw = "false";
+    if (webServer.hasArg("useap")){tmpua = "true";}
+    if (webServer.hasArg("usewifi")){tmpcw = "true";}
     File iniFile = SPIFFS.open("/config.ini", "w");
     if (iniFile) {
-    iniFile.print("\r\nSSID=" + AP_SSID + "\r\nPASSWORD=" + AP_PASS + "\r\n\r\nWEBSERVER_IP=" + tmpip + "\r\nWEBSERVER_PORT=" + tmpwport + "\r\n\r\nSUBNET_MASK=" + tmpsubn + "\r\n");
+    iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + tmpip + "\r\nWEBSERVER_PORT=" + tmpwport + "\r\nSUBNET_MASK=" + tmpsubn + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw);
     iniFile.close();
     }
     String htmStr = "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"8; url=/info.html\"><style type=\"text/css\">#loader {  z-index: 1;   width: 50px;   height: 50px;   margin: 0 0 0 0;   border: 6px solid #f3f3f3;   border-radius: 50%;   border-top: 6px solid #3498db;   width: 50px;   height: 50px;   -webkit-animation: spin 2s linear infinite;   animation: spin 2s linear infinite; } @-webkit-keyframes spin {  0%  {  -webkit-transform: rotate(0deg);  }  100% {  -webkit-transform: rotate(360deg); }}@keyframes spin {  0% { transform: rotate(0deg); }  100% { transform: rotate(360deg); }} body { background-color: #1451AE; color: #ffffff; font-size: 20px; font-weight: bold; margin: 0 0 0 0.0; padding: 0.4em 0.4em 0.4em 0.6em;}   #msgfmt { font-size: 16px; font-weight: normal;}#status { font-size: 16px;  font-weight: normal;}</style></head><center><br><br><br><br><br><p id=\"status\"><div id='loader'></div><br>Config saved<br>Rebooting</p></center></html>";
@@ -547,7 +569,7 @@ void handleConfig()
 
 void handleReboot()
 {
-  //Serial.print("Rebooting ESP");
+  Serial.print("Rebooting ESP");
   String htmStr = "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"8; url=/info.html\"><style type=\"text/css\">#loader {  z-index: 1;   width: 50px;   height: 50px;   margin: 0 0 0 0;   border: 6px solid #f3f3f3;   border-radius: 50%;   border-top: 6px solid #3498db;   width: 50px;   height: 50px;   -webkit-animation: spin 2s linear infinite;   animation: spin 2s linear infinite; } @-webkit-keyframes spin {  0%  {  -webkit-transform: rotate(0deg);  }  100% {  -webkit-transform: rotate(360deg); }}@keyframes spin {  0% { transform: rotate(0deg); }  100% { transform: rotate(360deg); }} body { background-color: #1451AE; color: #ffffff; font-size: 20px; font-weight: bold; margin: 0 0 0 0.0; padding: 0.4em 0.4em 0.4em 0.6em;}   #msgfmt { font-size: 16px; font-weight: normal;}#status { font-size: 16px;  font-weight: normal;}</style></head><center><br><br><br><br><br><p id=\"status\"><div id='loader'></div><br>Rebooting</p></center></html>";
   webServer.setContentLength(htmStr.length());
   webServer.send(200, "text/html", htmStr);
@@ -558,7 +580,11 @@ void handleReboot()
 
 void handleConfigHtml()
 {
-  String htmStr = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Config Editor</title><style type=\"text/css\">body {    background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;    margin: 0 0 0 0.0;    padding: 0.4em 0.4em 0.4em 0.6em;}  input[type=\"submit\"]:hover {     background: #ffffff;    color: green; }input[type=\"submit\"]:active {     outline-color: green;    color: green;    background: #ffffff; }table {    font-family: arial, sans-serif;     border-collapse: collapse;}td, th {border: 1px solid #dddddd;     text-align: left;    padding: 8px;}</style></head><body><form action=\"/config.html\" method=\"post\"><center><table><tr><td>SSID:</td><td><input name=\"ap_ssid\" value=\"" + AP_SSID + "\"></td></tr><tr><td>PASSWORD:</td><td><input name=\"ap_pass\" value=\"" + AP_PASS + "\"></td></tr><tr><td>WEBSERVER IP:</td><td><input name=\"web_ip\" value=\"" + Server_IP.toString() + "\"></td></tr><tr><td>WEBSERVER PORT:</td><td><input name=\"web_port\" value=\"" + String(WEB_PORT) + "\"></td></tr><tr><td>SUBNET MASK:</td><td><input name=\"subnet\" value=\"" + Subnet_Mask.toString() + "\"></td></tr></table><br><input id=\"savecfg\" type=\"submit\" value=\"Save Config\"></center></form></body></html>";
+  String tmpUa = "";
+  String tmpCw = "";
+  if (startAP){tmpUa = "checked";}
+  if (connectWifi){tmpCw = "checked";}
+  String htmStr = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Config Editor</title><style type=\"text/css\">body {    background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;    margin: 0 0 0 0.0;    padding: 0.4em 0.4em 0.4em 0.6em;}  input[type=\"submit\"]:hover {     background: #ffffff;    color: green; }input[type=\"submit\"]:active {     outline-color: green;    color: green;    background: #ffffff; }table {    font-family: arial, sans-serif;     border-collapse: collapse;}td {border: 1px solid #dddddd;     text-align: left;    padding: 8px;}  th {border: 1px solid #dddddd; background-color:gray;    text-align: center;    padding: 8px;}</style></head><body><form action=\"/config.html\" method=\"post\"><center><table><tr><th colspan=\"2\"><center>Access Point</center></th></tr><tr><td>AP SSID:</td><td><input name=\"ap_ssid\" value=\"" + AP_SSID + "\"></td></tr><tr><td>AP PASSWORD:</td><td><input name=\"ap_pass\" value=\"********\"></td></tr><tr><td>AP IP:</td><td><input name=\"web_ip\" value=\"" + Server_IP.toString() + "\"></td></tr><tr><td>SUBNET MASK:</td><td><input name=\"subnet\" value=\"" + Subnet_Mask.toString() + "\"></td></tr><tr><td>START AP:</td><td><input type=\"checkbox\" name=\"useap\" " + tmpUa +"></td></tr><tr><th colspan=\"2\"><center>Web Server</center></th></tr><tr><td>WEBSERVER PORT:</td><td><input name=\"web_port\" value=\"" + String(WEB_PORT) + "\"></td></tr><tr><th colspan=\"2\"><center>Wifi Connection</center></th></tr><tr><td>WIFI SSID:</td><td><input name=\"wifi_ssid\" value=\"" + WIFI_SSID + "\"></td></tr><tr><td>WIFI PASSWORD:</td><td><input name=\"wifi_pass\" value=\"********\"></td></tr><tr><td>CONNECT WIFI:</td><td><input type=\"checkbox\" name=\"usewifi\" " + tmpCw + "></tr></table><br><input id=\"savecfg\" type=\"submit\" value=\"Save Config\"></center></form></body></html>";
   webServer.setContentLength(htmStr.length());
   webServer.send(200, "text/html", htmStr);
 }
@@ -683,7 +709,11 @@ void writeConfig()
 {
   File iniFile = SPIFFS.open("/config.ini", "w");
   if (iniFile) {
-  iniFile.print("\r\nSSID=" + AP_SSID + "\r\nPASSWORD=" + AP_PASS + "\r\n\r\nWEBSERVER_IP=" + Server_IP.toString() + "\r\nWEBSERVER_PORT=" + String(WEB_PORT) + "\r\n\r\nSUBNET_MASK=" + Subnet_Mask.toString() + "\r\n");
+  String tmpua = "false";
+  String tmpcw = "false";
+  if (startAP){tmpua = "true";}
+  if (connectWifi){tmpcw = "true";}
+  iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + Server_IP.toString() + "\r\nWEBSERVER_PORT=" + String(WEB_PORT) + "\r\nSUBNET_MASK=" + Subnet_Mask.toString() + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw);
   iniFile.close();
   }
 }
@@ -696,9 +726,9 @@ void setup(void)
 pinMode(usbPin, OUTPUT); 
 digitalWrite(usbPin, LOW);
   
-  //Serial.begin(115200);
-  //Serial.setDebugOutput(true);
-  //Serial.println("Version: " + firmwareVer);
+  Serial.begin(115200);
+  Serial.setDebugOutput(true);
+  Serial.println("Version: " + firmwareVer);
   if (SPIFFS.begin()) {
   if (SPIFFS.exists("/config.ini")) {
   File iniFile = SPIFFS.open("/config.ini", "r");
@@ -710,15 +740,15 @@ digitalWrite(usbPin, LOW);
     }
    iniFile.close();
    
-   if(instr(iniData,"SSID="))
+   if(instr(iniData,"AP_SSID="))
    {
-   AP_SSID = split(iniData,"SSID=","\r\n");
+   AP_SSID = split(iniData,"AP_SSID=","\r\n");
    AP_SSID.trim();
    }
    
-   if(instr(iniData,"PASSWORD="))
+   if(instr(iniData,"AP_PASS="))
    {
-   AP_PASS = split(iniData,"PASSWORD=","\r\n");
+   AP_PASS = split(iniData,"AP_PASS=","\r\n");
    AP_PASS.trim();
    }
    
@@ -742,6 +772,46 @@ digitalWrite(usbPin, LOW);
     strsIp.trim();
     Subnet_Mask.fromString(strsIp);
    }
+
+   if(instr(iniData,"WIFI_SSID="))
+   {
+   WIFI_SSID = split(iniData,"WIFI_SSID=","\r\n");
+   WIFI_SSID.trim();
+   }
+   
+   if(instr(iniData,"WIFI_PASS="))
+   {
+   WIFI_PASS = split(iniData,"WIFI_PASS=","\r\n");
+   WIFI_PASS.trim();
+   }
+
+   if(instr(iniData,"USEAP="))
+   {
+    String strua = split(iniData,"USEAP=","\r\n");
+    strua.trim();
+    if (strua.equals("true"))
+    {
+      startAP = true;
+    }
+    else
+    {
+      startAP = false;
+    }
+   }
+
+   if(instr(iniData,"CONWIFI="))
+   {
+    String strcw = split(iniData,"CONWIFI=","\r\n");
+    strcw.trim();
+    if (strcw.equals("true"))
+    {
+      connectWifi = true;
+    }
+    else
+    {
+      connectWifi = false;
+    }
+   }
     }
   }
   else
@@ -751,27 +821,57 @@ digitalWrite(usbPin, LOW);
   }
   else
   {
-    //Serial.println("No SPIFFS");
+    Serial.println("No SPIFFS");
   }
 
-  //Serial.println("SSID: " + AP_SSID);
-  //Serial.println("Password: " + AP_PASS);
-  //Serial.print("\n");
-  //Serial.println("WEB Server IP: " + Server_IP.toString());
-  //Serial.println("Subnet: " + Subnet_Mask.toString());
-  //Serial.println("WEB Server Port: " + String(WEB_PORT));
-  //Serial.println("DNS Server IP: " + Server_IP.toString());
-  //Serial.print("\n\n");
 
-  WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(Server_IP, Server_IP, Subnet_Mask);
-  WiFi.softAP(AP_SSID.c_str(), AP_PASS.c_str());
-  //Serial.println("WIFI AP started");
+  if (startAP)
+  {
+    Serial.println("SSID: " + AP_SSID);
+    Serial.println("Password: " + AP_PASS);
+    Serial.println("");
+    Serial.println("WEB Server IP: " + Server_IP.toString());
+    Serial.println("Subnet: " + Subnet_Mask.toString());
+    Serial.println("WEB Server Port: " + String(WEB_PORT));
+    Serial.println("");
+    WiFi.softAPConfig(Server_IP, Server_IP, Subnet_Mask);
+    WiFi.softAP(AP_SSID.c_str(), AP_PASS.c_str());
+    Serial.println("WIFI AP started");
+    dnsServer.setTTL(30);
+    dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
+    dnsServer.start(53, "*", Server_IP);
+    Serial.println("DNS server started");
+    Serial.println("DNS Server IP: " + Server_IP.toString());
+  }
 
-  dnsServer.setTTL(30);
-  dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
-  dnsServer.start(53, "*", Server_IP);
-  //Serial.println("DNS server started");
+
+  if (connectWifi && WIFI_SSID.length() > 0 && WIFI_PASS.length() > 0)
+  {
+    WiFi.setAutoConnect(true); 
+    WiFi.setAutoReconnect(true);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.println("WIFI connecting");
+    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+      Serial.println("Wifi failed to connect");
+    } else {
+      IPAddress LAN_IP = WiFi.localIP(); 
+      if (LAN_IP)
+      {
+        Serial.println("Wifi Connected");
+        Serial.println("WEB Server LAN IP: " + LAN_IP.toString());
+        Serial.println("WEB Server Port: " + String(WEB_PORT));
+        if (!startAP)
+        {
+          dnsServer.setTTL(30);
+          dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
+          dnsServer.start(53, "*", LAN_IP);
+          Serial.println("DNS server started");
+          Serial.println("DNS Server IP: " + LAN_IP.toString());
+        }
+      }
+    }
+  }
+
 
   webServer.onNotFound(handleNotFound);
   webServer.on("/update.html", HTTP_POST, []() {} ,handleFwUpdate);
@@ -792,7 +892,7 @@ digitalWrite(usbPin, LOW);
   webServer.on("/reboot.html", HTTP_GET, handleRebootHtml);
   webServer.on("/reboot.html", HTTP_POST, handleReboot);
   webServer.begin(WEB_PORT);
-  //Serial.println("HTTP server started");
+  Serial.println("HTTP server started");
 }
 
 
