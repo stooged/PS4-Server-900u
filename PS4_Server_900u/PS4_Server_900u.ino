@@ -3,6 +3,7 @@
 #include <DNSServer.h>
 #include <FS.h>
 
+
 ADC_MODE(ADC_VCC);
 MD5Builder md5;
 DNSServer dnsServer;
@@ -67,6 +68,46 @@ String formatBytes(size_t bytes){
   } else {
     return String(bytes/1024.0/1024.0/1024.0)+" GB";
   }
+}
+
+
+String urldecode(String str)
+{
+    String encodedString="";
+    char c;
+    char code0;
+    char code1;
+    for (int i =0; i < str.length(); i++){
+        c=str.charAt(i);
+      if (c == '+'){
+        encodedString+=' ';  
+      }else if (c == '%') {
+        i++;
+        code0=str.charAt(i);
+        i++;
+        code1=str.charAt(i);
+        c = (h2int(code0) << 4) | h2int(code1);
+        encodedString+=c;
+      } else{
+        encodedString+=c;  
+      }
+      yield();
+    }
+   return encodedString;
+}
+
+unsigned char h2int(char c)
+{
+    if (c >= '0' && c <='9'){
+        return((unsigned char)c - '0');
+    }
+    if (c >= 'a' && c <='f'){
+        return((unsigned char)c - 'a' + 10);
+    }
+    if (c >= 'A' && c <='F'){
+        return((unsigned char)c - 'A' + 10);
+    }
+    return(0);
 }
 
 
@@ -191,7 +232,8 @@ void handleBinload(String pload)
 
 
 bool loadFromSdCard(String path) {
-Serial.println(path);
+ path = urldecode(path);
+ //Serial.println(path);
  if (path.equals("/connecttest.txt"))
  {
   webServer.setContentLength(22);
@@ -251,7 +293,7 @@ Serial.println(path);
   if (!dataFile) {
      if (path.endsWith("index.html") || path.endsWith("index.htm"))
      {
-       handlePayloads();
+       handleIndex();
        return true;
       }
     return false;
@@ -268,7 +310,7 @@ Serial.println(path);
   }
   
   if (webServer.streamFile(dataFile, dataType) != dataFile.size()) {
-    Serial.println("Sent less data than expected!");
+    //Serial.println("Sent less data than expected!");
   }
   dataFile.close();
   return true;
@@ -291,7 +333,7 @@ void handleNotFound() {
     message += " NAME:" + webServer.argName(i) + "\n VALUE:" + webServer.arg(i) + "\n";
   }
   webServer.send(404, "text/plain", "Not Found");
-  Serial.print(message);
+  //Serial.print(message);
 }
 
 void handleFileUpload() {
@@ -355,7 +397,7 @@ void updateFw()
 {
   if (SPIFFS.exists("/fwupdate.bin")) {
   File updateFile;
-  Serial.println("Update file found");
+  //Serial.println("Update file found");
   updateFile = SPIFFS.open("/fwupdate.bin", "r");
  if (updateFile) {
   size_t updateSize = updateFile.size();
@@ -364,7 +406,7 @@ void updateFw()
     md5.addStream(updateFile,updateSize);
     md5.calculate();
     String md5Hash = md5.toString();
-    Serial.println("Update file hash: " + md5Hash);
+    //Serial.println("Update file hash: " + md5Hash);
     updateFile.close();
     updateFile = SPIFFS.open("/fwupdate.bin", "r");
   if (updateFile) {
@@ -382,7 +424,7 @@ void updateFw()
     char md5Buf[md5BufSize];
     md5Hash.toCharArray(md5Buf, md5BufSize) ;
     Update.setMD5(md5Buf);
-    Serial.println("Updating firmware...");
+    //Serial.println("Updating firmware...");
    long bsent = 0;
    int cprog = 0;
     while (updateFile.available()) {
@@ -393,15 +435,15 @@ void updateFw()
       int progr = ((double)bsent /  updateSize)*100;
       if (progr >= cprog) {
         cprog = progr + 10;
-      Serial.println(String(progr) + "%");
+      //Serial.println(String(progr) + "%");
       }
     }
     updateFile.close(); 
   if (Update.end(true))
   {
   digitalWrite(BUILTIN_LED, HIGH);
-  Serial.println("Installed firmware hash: " + Update.md5String()); 
-  Serial.println("Update complete");
+  //Serial.println("Installed firmware hash: " + Update.md5String()); 
+  //Serial.println("Update complete");
   SPIFFS.remove("/fwupdate.bin");
   sendwebmsg("Uploaded file hash: " + md5Hash + "<br>Installed firmware hash: " + Update.md5String() + "<br><br>Update complete, Rebooting.");
   delay(1000);
@@ -410,14 +452,14 @@ void updateFw()
   else
   {
     digitalWrite(BUILTIN_LED, HIGH);
-    Serial.println("Update failed");
+    //Serial.println("Update failed");
     sendwebmsg("Update failed");
      //Update.printError(Serial);
     }
   }
   }
   else {
-  Serial.println("Error, file is invalid");
+  //Serial.println("Error, file is invalid");
   updateFile.close(); 
   digitalWrite(BUILTIN_LED, HIGH);
   SPIFFS.remove("/fwupdate.bin");
@@ -428,7 +470,7 @@ void updateFw()
   }
   else
   {
-    Serial.println("No update file found");
+    //Serial.println("No update file found");
     sendwebmsg("No update file found");
   }
 }
@@ -436,7 +478,7 @@ void updateFw()
 
 void handleFormat()
 {
-  Serial.print("Formatting SPIFFS");
+  //Serial.print("Formatting SPIFFS");
   SPIFFS.end();
   SPIFFS.format();
   SPIFFS.begin();
@@ -485,47 +527,52 @@ void handleFileMan() {
 }
 
 
-void handlePayloads() { //temp function to prompt people to upload the sketch data
+void handleIndex() {
   String image = "";
-  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>PS4 Server</title><style>.btn {background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover {background-color: RoyalBlue;}body {background-color: #1451AE; color: #ffffff; text-shadow: 3px 2px DodgerBlue;)</style></head><body><center><h1>Sketch data or index.html missing</h1>";
-  output += "You need to upload the exploit files to the ESP8266 board.<br>in the arduino ide select <b>Tools</b> &gt; <b>ESP8266 Sketch Data Upload</b></center></body></html>";
+  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><style>.btn { background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover { background-color: RoyalBlue;}body { background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;  margin: 0 0 0 0.0;  overflow-y:hidden;  text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute;   top: 0;   right: 0; bottom: 0;  left: 0;  overflow-y:hidden;}</style></head><body><div class=\"main\"><iframe src=\"payloads.html\" height=\"100%\" width=\"100%\" frameborder=\"0\"></iframe></div></body></html>";
   webServer.setContentLength(output.length());
   webServer.send(200, "text/html", output);
 }
 
-/*
+
 void handlePayloads() {
   Dir dir = SPIFFS.openDir("/");
-  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>PS4 Server</title><style>.btn {background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover {background-color: RoyalBlue;}body {background-color: #1451AE; color: #ffffff; text-shadow: 3px 2px DodgerBlue;)</style></head><body><center><h1>PS4 Payloads</h1>";
+  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><script>function setpayload(payload,title){ sessionStorage.setItem('payload', payload); sessionStorage.setItem('title', title); window.open('loader.html', '_self');}</script><style>.btn { background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover { background-color: RoyalBlue;}body { background-color: #1451AE; color: #ffffff; font-size: 14px; font-weight: bold; margin: 0 0 0 0.0; overflow-y:hidden; text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow-y:hidden;}</style></head><body><center><h1>9.00 Payloads</h1>";
   int cntr = 0;
+  int payloadCount = 0;
   while(dir.next()){
     File entry = dir.openFile("r");
     String fname = String(entry.name()).substring(1);
     if (fname.length() > 0)
     {
-      if (fname.endsWith(".gz")) {
+    if (fname.endsWith(".gz")) {
         fname = fname.substring(0, fname.length() - 3);
-      }
-    if (fname.endsWith(".html") && fname != "index.html" && fname != "payloads.html")
+    }
+    if (fname.endsWith(".bin"))
     {
-    String fnamev = fname;
-    fnamev.replace(".html","");
-    output +=  "<a href='" +  fname + "'><button class='btn'>" + fnamev  + "</button></a>&nbsp;";
-     cntr++;
-     if (cntr == 3)
-     {
-      cntr = 0;
-      output +=  "<p></p>";
+      payloadCount++;
+      String fnamev = fname;
+      fnamev.replace(".bin","");
+      output +=  "<a onclick=\"setpayload('/" + fname + "','" + fnamev + "')\"><button class=\"btn\">" + fnamev + "</button></a>&nbsp;";
+      cntr++;
+      if (cntr == 3)
+      {
+        cntr = 0;
+        output +=  "<p></p>";
       }
     }
     }
     entry.close();
   }
+  if (payloadCount == 0)
+  {
+      output += "No .bin payloads found<br>You need to upload the loader.html and payloads to the ESP8266 board.<br>in the arduino ide select <b>Tools</b> &gt; <b>ESP8266 Sketch Data Upload</b></center></body></html>";
+  }
   output += "</center></body></html>";
   webServer.setContentLength(output.length());
   webServer.send(200, "text/html", output);
 }
-*/
+
 
 void handleConfig()
 {
@@ -569,7 +616,7 @@ void handleConfig()
 
 void handleReboot()
 {
-  Serial.print("Rebooting ESP");
+  //Serial.print("Rebooting ESP");
   String htmStr = "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"8; url=/info.html\"><style type=\"text/css\">#loader {  z-index: 1;   width: 50px;   height: 50px;   margin: 0 0 0 0;   border: 6px solid #f3f3f3;   border-radius: 50%;   border-top: 6px solid #3498db;   width: 50px;   height: 50px;   -webkit-animation: spin 2s linear infinite;   animation: spin 2s linear infinite; } @-webkit-keyframes spin {  0%  {  -webkit-transform: rotate(0deg);  }  100% {  -webkit-transform: rotate(360deg); }}@keyframes spin {  0% { transform: rotate(0deg); }  100% { transform: rotate(360deg); }} body { background-color: #1451AE; color: #ffffff; font-size: 20px; font-weight: bold; margin: 0 0 0 0.0; padding: 0.4em 0.4em 0.4em 0.6em;}   #msgfmt { font-size: 16px; font-weight: normal;}#status { font-size: 16px;  font-weight: normal;}</style></head><center><br><br><br><br><br><p id=\"status\"><div id='loader'></div><br>Rebooting</p></center></html>";
   webServer.setContentLength(htmStr.length());
   webServer.send(200, "text/html", htmStr);
@@ -726,9 +773,9 @@ void setup(void)
 pinMode(usbPin, OUTPUT); 
 digitalWrite(usbPin, LOW);
   
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
-  Serial.println("Version: " + firmwareVer);
+  //Serial.begin(115200);
+  //Serial.setDebugOutput(true);
+  //Serial.println("Version: " + firmwareVer);
   if (SPIFFS.begin()) {
   if (SPIFFS.exists("/config.ini")) {
   File iniFile = SPIFFS.open("/config.ini", "r");
@@ -821,27 +868,27 @@ digitalWrite(usbPin, LOW);
   }
   else
   {
-    Serial.println("No SPIFFS");
+    //Serial.println("No SPIFFS");
   }
 
 
   if (startAP)
   {
-    Serial.println("SSID: " + AP_SSID);
-    Serial.println("Password: " + AP_PASS);
-    Serial.println("");
-    Serial.println("WEB Server IP: " + Server_IP.toString());
-    Serial.println("Subnet: " + Subnet_Mask.toString());
-    Serial.println("WEB Server Port: " + String(WEB_PORT));
-    Serial.println("");
+    //Serial.println("SSID: " + AP_SSID);
+    //Serial.println("Password: " + AP_PASS);
+    //Serial.println("");
+    //Serial.println("WEB Server IP: " + Server_IP.toString());
+    //Serial.println("Subnet: " + Subnet_Mask.toString());
+    //Serial.println("WEB Server Port: " + String(WEB_PORT));
+    //Serial.println("");
     WiFi.softAPConfig(Server_IP, Server_IP, Subnet_Mask);
     WiFi.softAP(AP_SSID.c_str(), AP_PASS.c_str());
-    Serial.println("WIFI AP started");
+    //Serial.println("WIFI AP started");
     dnsServer.setTTL(30);
     dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
     dnsServer.start(53, "*", Server_IP);
-    Serial.println("DNS server started");
-    Serial.println("DNS Server IP: " + Server_IP.toString());
+    //Serial.println("DNS server started");
+    //Serial.println("DNS Server IP: " + Server_IP.toString());
   }
 
 
@@ -850,23 +897,23 @@ digitalWrite(usbPin, LOW);
     WiFi.setAutoConnect(true); 
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
-    Serial.println("WIFI connecting");
+    //Serial.println("WIFI connecting");
     if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-      Serial.println("Wifi failed to connect");
+      //Serial.println("Wifi failed to connect");
     } else {
       IPAddress LAN_IP = WiFi.localIP(); 
       if (LAN_IP)
       {
-        Serial.println("Wifi Connected");
-        Serial.println("WEB Server LAN IP: " + LAN_IP.toString());
-        Serial.println("WEB Server Port: " + String(WEB_PORT));
+        //Serial.println("Wifi Connected");
+        //Serial.println("WEB Server LAN IP: " + LAN_IP.toString());
+        //Serial.println("WEB Server Port: " + String(WEB_PORT));
         if (!startAP)
         {
           dnsServer.setTTL(30);
           dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
           dnsServer.start(53, "*", LAN_IP);
-          Serial.println("DNS server started");
-          Serial.println("DNS Server IP: " + LAN_IP.toString());
+          //Serial.println("DNS server started");
+          //Serial.println("DNS Server IP: " + LAN_IP.toString());
         }
       }
     }
@@ -891,8 +938,9 @@ digitalWrite(usbPin, LOW);
   webServer.on("/admin.html", HTTP_GET, handleAdminHtml);
   webServer.on("/reboot.html", HTTP_GET, handleRebootHtml);
   webServer.on("/reboot.html", HTTP_POST, handleReboot);
+  webServer.on("/payloads.html", HTTP_GET, handlePayloads);
   webServer.begin(WEB_PORT);
-  Serial.println("HTTP server started");
+  //Serial.println("HTTP server started");
 }
 
 
