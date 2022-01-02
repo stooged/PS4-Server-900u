@@ -3,6 +3,10 @@
 
 this is a slight mod to <a href=https://github.com/stooged/PS4-Server-900>PS4 Server 9.00</a>
 
+the only files now required on the spiffs storage of the esp8266 are the .bin payloads, everything else is handled internally including generating a list of payloads.
+
+you can still modify the html by uploading your own index.html, if there is no index.html on the spiffs storage the internal pages will be used.
+
 i have added the ability to switch off and on the usb device by using the pin D7 on the board to trigger a relay to control the power to the usb device.
 
 the idea is to cut the 5v power to the usb drive and have it switched on and off by a relay which is controlled by the esp8266 device and switch it off and on during the initial exploit load which removes the need to plug and unplug the usb drive.
