@@ -278,18 +278,6 @@ bool loadFromSdCard(String path) {
     return true;
   }
   
-  if (path.endsWith("payloads.html"))
-  {
-    handlePayloads();
-    return true;
-  }
-
-  if (path.endsWith("loader.html"))
-  {
-    handleLoader();
-    return true;
-  }
-  
   String dataType = getContentType(path);
 
   File dataFile;
@@ -303,7 +291,17 @@ bool loadFromSdCard(String path) {
      {
        handleIndex();
        return true;
-      }
+     }
+     if (path.endsWith("payloads.html"))
+     {
+       handlePayloads();
+       return true;
+     }
+     if (path.endsWith("loader.html"))
+     {
+       webServer.send(200, "text/html", loaderData);
+       return true;
+     }
     return false;
   }
   if (webServer.hasArg("download")) {
@@ -582,12 +580,6 @@ void handlePayloads() {
 }
 
 
-void handleLoader()
-{
-  webServer.send(200, "text/html", loaderData);
-}
-
-
 void handleConfig()
 {
   if(webServer.hasArg("ap_ssid") && webServer.hasArg("ap_pass") && webServer.hasArg("web_ip") && webServer.hasArg("web_port") && webServer.hasArg("subnet") && webServer.hasArg("wifi_ssid") && webServer.hasArg("wifi_pass")) 
@@ -719,7 +711,18 @@ void handleCacheManifest() {
     }
     entry.close();
   }
-  output += "index.html\r\nloader.html\r\npayloads.html\r\n";
+  if(!instr(output,"index.html\r\n"))
+  {
+    output += "index.html\r\n";
+  }
+  if(!instr(output,"loader.html\r\n"))
+  {
+    output += "loader.html\r\n";
+  }
+  if(!instr(output,"payloads.html\r\n"))
+  {
+    output += "payloads.html\r\n";
+  }
   webServer.setContentLength(output.length());
   webServer.send(200, "text/cache-manifest", output);
 }
