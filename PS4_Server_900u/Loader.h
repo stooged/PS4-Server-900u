@@ -1,7 +1,7 @@
 static const char loaderData[] PROGMEM = R"==(
 <!DOCTYPE html><html>
 <head>
-<title>Payload</title>
+<title>Loader</title>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <style>body{color:white;font-size:20px;text-align:center;margin:0;overflow:hidden;}.info{overflow: hidden;position: fixed;position: absolute;top: 45%;left: 50%;font-size: 25px;font-family: sans-serif;color: #b8b8b8;transform: translate(-50%, -50%);}</style>
 <script>
@@ -908,6 +908,7 @@ var trigger_spray =  function () {
     //Trigger OOB
   
     //ESP8266 enable usb - stooged
+    showMessage("Loading USB, ExFatHax...");
     enableUSB();
 
     sleep(10000).then(() => {
