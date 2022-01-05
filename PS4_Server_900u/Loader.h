@@ -8,8 +8,13 @@ static const char loaderData[] PROGMEM = R"==(
 
 var payloadFile = sessionStorage.getItem('payload');
 var payloadTitle = sessionStorage.getItem('title');
+var usbWaitTime = sessionStorage.getItem('waittime');
 var payloadData = "";
 
+if (!usbWaitTime)
+{
+  usbWaitTime = 10000; //default if empty
+}
 
 function loadPayloadData() // preload payload data
 {
@@ -911,7 +916,8 @@ var trigger_spray =  function () {
     showMessage("Loading USB, ExFatHax...");
     enableUSB();
 
-    sleep(10000).then(() => {
+
+    sleep(usbWaitTime).then(() => {
    
         //Trigger corrupt knote
         {
