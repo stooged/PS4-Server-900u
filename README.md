@@ -7,6 +7,8 @@ the only files now required on the spiffs storage of the esp8266 are the .bin pa
 
 you can still modify the html by uploading your own index.html, if there is no index.html on the spiffs storage the internal pages will be used.
 
+if you have problems compiling the sketch make sure the <a href=https://github.com/esp8266/Arduino>ESP8266 library</a> is up to date. 
+
 i have added the ability to switch off and on the usb device by using the pin D7 on the board to trigger a relay to control the power to the usb device.
 
 the idea is to cut the 5v power to the usb drive and have it switched on and off by a relay which is controlled by the esp8266 device and switch it off and on during the initial exploit load which removes the need to plug and unplug the usb drive.
