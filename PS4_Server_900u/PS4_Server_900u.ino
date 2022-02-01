@@ -28,6 +28,7 @@ IPAddress Subnet_Mask(255,255,255,0);
 boolean connectWifi = false;
 String WIFI_SSID = "Home_WIFI";
 String WIFI_PASS = "password";
+String WIFI_HOST = "PS4-WEB"; //Hostname for client mode
 
 //server port
 int WEB_PORT = 80;
@@ -44,7 +45,7 @@ String split(String str, String from, String to)
   from.toLowerCase();
   to.toLowerCase();
   int pos1 = tmpstr.indexOf(from);
-  int pos2 = tmpstr.indexOf(to, pos1 + from.length());   
+  int pos2 = tmpstr.indexOf(to, pos1 + from.length());
   String retval = str.substring(pos1 + from.length() , pos2);
   return retval;
 }
@@ -61,7 +62,8 @@ return true;
 }
 
 
-String formatBytes(size_t bytes){
+String formatBytes(size_t bytes)
+{
   if (bytes < 1024){
     return String(bytes)+" B";
   } else if(bytes < (1024 * 1024)){
@@ -167,7 +169,8 @@ String errorMsg(int errnum)
 }
 
 
-String getContentType(String filename){
+String getContentType(String filename)
+{
   if(filename.endsWith(".htm")) return "text/html";
   else if(filename.endsWith(".html")) return "text/html";
   else if(filename.endsWith(".css")) return "text/css";
@@ -205,7 +208,7 @@ void handleBinload(String pload)
        while (dataFile.available()) {
          client.write(dataFile.read());
        }
-    dataFile.close(); 
+    dataFile.close();
     }
     client.stop();
     scode = 200;
@@ -219,7 +222,7 @@ void handleBinload(String pload)
        while (dataFile.available()) {
          client.write(dataFile.read());
        }
-    dataFile.close(); 
+    dataFile.close();
   }
   client.stop();
   scode = 200;
@@ -230,7 +233,8 @@ void handleBinload(String pload)
 }
 
 
-bool loadFromSdCard(String path) {
+bool loadFromSdCard(String path)
+{
  path = webServer.urlDecode(path);
  //Serial.println(path);
  if (path.equals("/connecttest.txt"))
@@ -251,7 +255,7 @@ bool loadFromSdCard(String path) {
   if (path.endsWith("/")) {
     path += "index.html";
   }
-  
+
   if (instr(path,"/update/ps4/"))
   {
     String Region = split(path,"/update/ps4/list/","/");
@@ -280,7 +284,7 @@ bool loadFromSdCard(String path) {
     handleBinload(path);
     return true;
   }
-  
+
   String dataType = getContentType(path);
 
   File dataFile;
@@ -288,7 +292,7 @@ bool loadFromSdCard(String path) {
   if (!dataFile) {
     dataFile = SPIFFS.open(path, "r");
   }
-  
+
   if (!dataFile) {
      if (path.endsWith("index.html") || path.endsWith("index.htm"))
      {
@@ -317,7 +321,7 @@ bool loadFromSdCard(String path) {
     webServer.sendHeader("Content-Disposition", "attachment; filename=\"" + dlFile + "\"");
     webServer.sendHeader("Content-Transfer-Encoding", "binary");
   }
-  
+
   if (webServer.streamFile(dataFile, dataType) != dataFile.size()) {
     //Serial.println("Sent less data than expected!");
   }
@@ -326,7 +330,8 @@ bool loadFromSdCard(String path) {
 }
 
 
-void handleNotFound() {
+void handleNotFound()
+{
   if (loadFromSdCard(webServer.uri())) {
     return;
   }
@@ -345,7 +350,9 @@ void handleNotFound() {
   //Serial.print(message);
 }
 
-void handleFileUpload() {
+
+void handleFileUpload()
+{
   if (webServer.uri() != "/upload.html") {
     webServer.send(500, "text/plain", "Internal Server Error");
     return;
@@ -372,7 +379,8 @@ void handleFileUpload() {
 }
 
 
-void handleFwUpdate() {
+void handleFwUpdate()
+{
   if (webServer.uri() != "/update.html") {
     sendwebmsg("Error");
     return;
@@ -410,7 +418,7 @@ void updateFw()
   updateFile = SPIFFS.open("/fwupdate.bin", "r");
  if (updateFile) {
   size_t updateSize = updateFile.size();
-   if (updateSize > 0) {   
+   if (updateSize > 0) {
     md5.begin();
     md5.addStream(updateFile,updateSize);
     md5.calculate();
@@ -447,11 +455,11 @@ void updateFw()
       //Serial.println(String(progr) + "%");
       }
     }
-    updateFile.close(); 
+    updateFile.close();
   if (Update.end(true))
   {
   digitalWrite(BUILTIN_LED, HIGH);
-  //Serial.println("Installed firmware hash: " + Update.md5String()); 
+  //Serial.println("Installed firmware hash: " + Update.md5String());
   //Serial.println("Update complete");
   SPIFFS.remove("/fwupdate.bin");
   sendwebmsg("Uploaded file hash: " + md5Hash + "<br>Installed firmware hash: " + Update.md5String() + "<br><br>Update complete, Rebooting.");
@@ -469,11 +477,11 @@ void updateFw()
   }
   else {
   //Serial.println("Error, file is invalid");
-  updateFile.close(); 
+  updateFile.close();
   digitalWrite(BUILTIN_LED, HIGH);
   SPIFFS.remove("/fwupdate.bin");
   sendwebmsg("Error, file is invalid");
-  return;    
+  return;
   }
   }
   }
@@ -497,8 +505,9 @@ void handleFormat()
 }
 
 
-void handleDelete(){
-  if(!webServer.hasArg("file")) 
+void handleDelete()
+{
+  if(!webServer.hasArg("file"))
   {
     webServer.sendHeader("Location","/fileman.html");
     webServer.send(302, "text/html", "");
@@ -513,9 +522,10 @@ void handleDelete(){
 }
 
 
-void handleFileMan() {
+void handleFileMan()
+{
   Dir dir = SPIFFS.openDir("/");
-  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>File Manager</title><style type=\"text/css\">a:link {color: #ffffff; text-decoration: none;} a:visited {color: #ffffff; text-decoration: none;} a:hover {color: #ffffff; text-decoration: underline;} a:active {color: #ffffff; text-decoration: underline;} table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%;} td, th {border: 1px solid #dddddd; text-align: left; padding: 8px;} button {display: inline-block; padding: 1px; margin-right: 6px; vertical-align: top; float:left;} body {background-color: #1451AE;color: #ffffff; font-size: 14px; padding: 0.4em 0.4em 0.4em 0.6em; margin: 0 0 0 0.0;}</style><script>function statusDel(fname) {var answer = confirm(\"Are you sure you want to delete \" + fname + \" ?\");if (answer) {return true;} else { return false; }}</script></head><body><br><table>"; 
+  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>File Manager</title><style type=\"text/css\">a:link {color: #ffffff; text-decoration: none;} a:visited {color: #ffffff; text-decoration: none;} a:hover {color: #ffffff; text-decoration: underline;} a:active {color: #ffffff; text-decoration: underline;} table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%;} td, th {border: 1px solid #dddddd; text-align: left; padding: 8px;} button {display: inline-block; padding: 1px; margin-right: 6px; vertical-align: top; float:left;} body {background-color: #1451AE;color: #ffffff; font-size: 14px; padding: 0.4em 0.4em 0.4em 0.6em; margin: 0 0 0 0.0;}</style><script>function statusDel(fname) {var answer = confirm(\"Are you sure you want to delete \" + fname + \" ?\");if (answer) {return true;} else { return false; }}</script></head><body><br><table>";
   int fileCount = 0;
   while(dir.next()){
     File entry = dir.openFile("r");
@@ -542,7 +552,8 @@ void handleFileMan() {
 }
 
 
-void handleIndex() {
+void handleIndex()
+{
   String image = "";
   String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><style>.btn { background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover { background-color: RoyalBlue;}body { background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;  margin: 0 0 0 0.0;  overflow-y:hidden;  text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute;   top: 0;   right: 0; bottom: 0;  left: 0;  overflow-y:hidden;}</style></head><body><div class=\"main\"><iframe src=\"payloads.html\" height=\"100%\" width=\"100%\" frameborder=\"0\"></iframe></div></body></html>";
   webServer.setContentLength(output.length());
@@ -550,7 +561,8 @@ void handleIndex() {
 }
 
 
-void handlePayloads() {
+void handlePayloads()
+{
   Dir dir = SPIFFS.openDir("/");
   String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><script>function setpayload(payload,title,waittime){ sessionStorage.setItem('payload', payload); sessionStorage.setItem('title', title); sessionStorage.setItem('waittime', waittime);  window.open('loader.html', '_self');}</script><style>.btn { background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover { background-color: RoyalBlue;}body { background-color: #1451AE; color: #ffffff; font-size: 14px; font-weight: bold; margin: 0 0 0 0.0; overflow-y:hidden; text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow-y:hidden;} msg {color: #ffffff; font-weight: normal; text-shadow: none;} a {color: #ffffff; font-weight: bold;}</style></head><body><center><h1>9.00 Payloads</h1>";
   int cntr = 0;
@@ -593,7 +605,7 @@ void handlePayloads() {
 
 void handleConfig()
 {
-  if(webServer.hasArg("ap_ssid") && webServer.hasArg("ap_pass") && webServer.hasArg("web_ip") && webServer.hasArg("web_port") && webServer.hasArg("subnet") && webServer.hasArg("wifi_ssid") && webServer.hasArg("wifi_pass") && webServer.hasArg("usbwait")) 
+  if(webServer.hasArg("ap_ssid") && webServer.hasArg("ap_pass") && webServer.hasArg("web_ip") && webServer.hasArg("web_port") && webServer.hasArg("subnet") && webServer.hasArg("wifi_ssid") && webServer.hasArg("wifi_pass") && webServer.hasArg("usbwait") && webServer.hasArg("wifi_host"))
   {
     AP_SSID = webServer.arg("ap_ssid");
     if (!webServer.arg("ap_pass").equals("********"))
@@ -605,6 +617,7 @@ void handleConfig()
     {
       WIFI_PASS = webServer.arg("wifi_pass");
     }
+    if (webServer.arg("wifi_host").equals("")) { WIFI_HOST = "PS4-WEB"; } else { WIFI_HOST = webServer.arg("wifi_host"); }
     String tmpip = webServer.arg("web_ip");
     String tmpwport = webServer.arg("web_port");
     String tmpsubn = webServer.arg("subnet");
@@ -615,7 +628,7 @@ void handleConfig()
     int USB_WAIT = webServer.arg("usbwait").toInt();
     File iniFile = SPIFFS.open("/config.ini", "w");
     if (iniFile) {
-    iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + tmpip + "\r\nWEBSERVER_PORT=" + tmpwport + "\r\nSUBNET_MASK=" + tmpsubn + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw + "\r\nUSBWAIT=" + USB_WAIT + "\r\n");
+    iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + tmpip + "\r\nWEBSERVER_PORT=" + tmpwport + "\r\nSUBNET_MASK=" + tmpsubn + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw + "\r\nUSBWAIT=" + USB_WAIT + "\r\nWIFI_HOST=" + WIFI_HOST + "\r\n");
     iniFile.close();
     }
     String htmStr = "<!DOCTYPE html><html><head><meta http-equiv=\"refresh\" content=\"8; url=/info.html\"><style type=\"text/css\">#loader {  z-index: 1;   width: 50px;   height: 50px;   margin: 0 0 0 0;   border: 6px solid #f3f3f3;   border-radius: 50%;   border-top: 6px solid #3498db;   width: 50px;   height: 50px;   -webkit-animation: spin 2s linear infinite;   animation: spin 2s linear infinite; } @-webkit-keyframes spin {  0%  {  -webkit-transform: rotate(0deg);  }  100% {  -webkit-transform: rotate(360deg); }}@keyframes spin {  0% { transform: rotate(0deg); }  100% { transform: rotate(360deg); }} body { background-color: #1451AE; color: #ffffff; font-size: 20px; font-weight: bold; margin: 0 0 0 0.0; padding: 0.4em 0.4em 0.4em 0.6em;}   #msgfmt { font-size: 16px; font-weight: normal;}#status { font-size: 16px;  font-weight: normal;}</style></head><center><br><br><br><br><br><p id=\"status\"><div id='loader'></div><br>Config saved<br>Rebooting</p></center></html>";
@@ -649,11 +662,8 @@ void handleConfigHtml()
   String tmpCw = "";
   if (startAP){tmpUa = "checked";}
   if (connectWifi){tmpCw = "checked";}
-  String htmStr = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Config Editor</title><style type=\"text/css\">body {    background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;    margin: 0 0 0 0.0;    padding: 0.4em 0.4em 0.4em 0.6em;}  input[type=\"submit\"]:hover {     background: #ffffff;    color: green; }input[type=\"submit\"]:active {     outline-color: green;    color: green;    background: #ffffff; }table {    font-family: arial, sans-serif;     border-collapse: collapse;}td {border: 1px solid #dddddd;     text-align: left;    padding: 8px;}  th {border: 1px solid #dddddd; background-color:gray;    text-align: center;    padding: 8px;}</style></head><body><form action=\"/config.html\" method=\"post\"><center><table><tr><th colspan=\"2\"><center>Access Point</center></th></tr><tr><td>AP SSID:</td><td><input name=\"ap_ssid\" value=\"" + AP_SSID + "\"></td></tr><tr><td>AP PASSWORD:</td><td><input name=\"ap_pass\" value=\"********\"></td></tr><tr><td>AP IP:</td><td><input name=\"web_ip\" value=\"" + Server_IP.toString() + "\"></td></tr><tr><td>SUBNET MASK:</td><td><input name=\"subnet\" value=\"" + Subnet_Mask.toString() + "\"></td></tr><tr><td>START AP:</td><td><input type=\"checkbox\" name=\"useap\" " + tmpUa +"></td></tr><tr><th colspan=\"2\"><center>Web Server</center></th></tr><tr><td>WEBSERVER PORT:</td><td><input name=\"web_port\" value=\"" + String(WEB_PORT) + "\"></td></tr><tr><th colspan=\"2\"><center>Wifi Connection</center></th></tr><tr><td>WIFI SSID:</td><td><input name=\"wifi_ssid\" value=\"" + WIFI_SSID + "\"></td></tr><tr><td>WIFI PASSWORD:</td><td><input name=\"wifi_pass\" value=\"********\"></td></tr><tr><td>CONNECT WIFI:</td><td><input type=\"checkbox\" name=\"usewifi\" " + tmpCw + "></tr><tr><th colspan=\"2\"><center>Auto USB Wait</center></th></tr><tr><td>WAIT TIME(ms):</td><td><input name=\"usbwait\" value=\"" + USB_WAIT + "\"></td></tr></table><br><input id=\"savecfg\" type=\"submit\" value=\"Save Config\"></center></form></body></html>";
-  
-  
-  
-  
+  String htmStr = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Config Editor</title><style type=\"text/css\">body {    background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;    margin: 0 0 0 0.0;    padding: 0.4em 0.4em 0.4em 0.6em;}  input[type=\"submit\"]:hover {     background: #ffffff;    color: green; }input[type=\"submit\"]:active {     outline-color: green;    color: green;    background: #ffffff; }table {    font-family: arial, sans-serif;     border-collapse: collapse;}td {border: 1px solid #dddddd;     text-align: left;    padding: 8px;}  th {border: 1px solid #dddddd; background-color:gray;    text-align: center;    padding: 8px;}</style></head><body><form action=\"/config.html\" method=\"post\"><center><table><tr><th colspan=\"2\"><center>Access Point</center></th></tr><tr><td>AP SSID:</td><td><input name=\"ap_ssid\" value=\"" + AP_SSID + "\"></td></tr><tr><td>AP PASSWORD:</td><td><input name=\"ap_pass\" value=\"********\"></td></tr><tr><td>AP IP:</td><td><input name=\"web_ip\" value=\"" + Server_IP.toString() + "\"></td></tr><tr><td>SUBNET MASK:</td><td><input name=\"subnet\" value=\"" + Subnet_Mask.toString() + "\"></td></tr><tr><td>START AP:</td><td><input type=\"checkbox\" name=\"useap\" " + tmpUa +"></td></tr><tr><th colspan=\"2\"><center>Web Server</center></th></tr><tr><td>HOSTNAME:<br><small>Alphanumeric + Dash</small></td><td><input name=\"wifi_host\" value=\"" + WIFI_HOST + "\"></td></tr><tr><td>WEBSERVER PORT:</td><td><input name=\"web_port\" value=\"" + String(WEB_PORT) + "\"></td></tr><tr><th colspan=\"2\"><center>Wifi Connection</center></th></tr><tr><td>WIFI SSID:</td><td><input name=\"wifi_ssid\" value=\"" + WIFI_SSID + "\"></td></tr><tr><td>WIFI PASSWORD:</td><td><input name=\"wifi_pass\" value=\"********\"></td></tr><tr><td>CONNECT WIFI:</td><td><input type=\"checkbox\" name=\"usewifi\" " + tmpCw + "></tr><tr><th colspan=\"2\"><center>Auto USB Wait</center></th></tr><tr><td>WAIT TIME(ms):</td><td><input name=\"usbwait\" value=\"" + USB_WAIT + "\"></td></tr></table><br><input id=\"savecfg\" type=\"submit\" value=\"Save Config\"></center></form></body></html>";
+
   webServer.setContentLength(htmStr.length());
   webServer.send(200, "text/html", htmStr);
 }
@@ -712,7 +722,8 @@ void handleRebootHtml()
 }
 
 
-void handleCacheManifest() {
+void handleCacheManifest()
+{
   String output = "CACHE MANIFEST\r\n";
   Dir dir = SPIFFS.openDir("/");
   while(dir.next()){
@@ -767,7 +778,7 @@ void handleInfo()
   output += "Actual Flash size based on chip Id: " + formatBytes(ESP.getFlashChipRealSize()) + "<br>";
   output += "Flash frequency: " + String(flashFreq) + " MHz<br>";
   output += "Flash write mode: " + String((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN")) + "<br><hr>";
-  output += "###### File system (SPIFFS) ######<br><br>"; 
+  output += "###### File system (SPIFFS) ######<br><br>";
   output += "Total space: " + formatBytes(fs_info.totalBytes) + "<br>";
   output += "Used space: " + formatBytes(fs_info.usedBytes) + "<br>";
   output += "Block size: " + String(fs_info.blockSize) + "<br>";
@@ -778,8 +789,15 @@ void handleInfo()
   output += "Sketch hash: " + ESP.getSketchMD5() + "<br>";
   output += "Sketch size: " +  formatBytes(ESP.getSketchSize()) + "<br>";
   output += "Free space available: " +  formatBytes(ESP.getFreeSketchSpace()) + "<br><hr>";
-  output += "###### power ######<br><br>";
+  output += "###### Power ######<br><br>";
   output += "Supply voltage: " +  String(supplyVoltage) + " V<br><hr>";
+  if (connectWifi)
+  {
+    output += "##### WiFi Client information #####<br><br>";
+    output += "WiFi SSID: " + WiFi.SSID() + "<br>";
+    output += "Client/Web Server IP: " + WiFi.localIP().toString() + "<br>";
+    output += "Hostname: " + WiFi.hostname() + "<br><hr>";
+  }
   output += "</html>";
   webServer.setContentLength(output.length());
   webServer.send(200, "text/html", output);
@@ -794,19 +812,19 @@ void writeConfig()
   String tmpcw = "false";
   if (startAP){tmpua = "true";}
   if (connectWifi){tmpcw = "true";}
-  iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + Server_IP.toString() + "\r\nWEBSERVER_PORT=" + String(WEB_PORT) + "\r\nSUBNET_MASK=" + Subnet_Mask.toString() + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw + "\r\nUSBWAIT=" + USB_WAIT + "\r\n");
+  iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + Server_IP.toString() + "\r\nWEBSERVER_PORT=" + String(WEB_PORT) + "\r\nSUBNET_MASK=" + Subnet_Mask.toString() + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw + "\r\nUSBWAIT=" + USB_WAIT + "\r\nWIFI_HOST=" + WIFI_HOST + "\r\n");
   iniFile.close();
   }
 }
 
 
 
-void setup(void) 
+void setup(void)
 {
 
-pinMode(usbPin, OUTPUT); 
+pinMode(usbPin, OUTPUT);
 digitalWrite(usbPin, LOW);
-  
+
   //Serial.begin(115200);
   //Serial.setDebugOutput(true);
   //Serial.println("Version: " + firmwareVer);
@@ -820,26 +838,26 @@ digitalWrite(usbPin, LOW);
       iniData += chnk;
     }
    iniFile.close();
-   
+
    if(instr(iniData,"AP_SSID="))
    {
    AP_SSID = split(iniData,"AP_SSID=","\r\n");
    AP_SSID.trim();
    }
-   
+
    if(instr(iniData,"AP_PASS="))
    {
    AP_PASS = split(iniData,"AP_PASS=","\r\n");
    AP_PASS.trim();
    }
-   
+
    if(instr(iniData,"WEBSERVER_PORT="))
    {
    String strWprt = split(iniData,"WEBSERVER_PORT=","\r\n");
    strWprt.trim();
    WEB_PORT = strWprt.toInt();
    }
-   
+
    if(instr(iniData,"WEBSERVER_IP="))
    {
     String strwIp = split(iniData,"WEBSERVER_IP=","\r\n");
@@ -859,11 +877,17 @@ digitalWrite(usbPin, LOW);
    WIFI_SSID = split(iniData,"WIFI_SSID=","\r\n");
    WIFI_SSID.trim();
    }
-   
+
    if(instr(iniData,"WIFI_PASS="))
    {
    WIFI_PASS = split(iniData,"WIFI_PASS=","\r\n");
    WIFI_PASS.trim();
+   }
+
+   if(instr(iniData,"WIFI_HOST="))
+   {
+   WIFI_HOST = split(iniData,"WIFI_HOST=","\r\n");
+   WIFI_HOST.trim();
    }
 
    if(instr(iniData,"USEAP="))
@@ -903,7 +927,7 @@ digitalWrite(usbPin, LOW);
   }
   else
   {
-   writeConfig(); 
+   writeConfig();
   }
   }
   else
@@ -934,18 +958,20 @@ digitalWrite(usbPin, LOW);
 
   if (connectWifi && WIFI_SSID.length() > 0 && WIFI_PASS.length() > 0)
   {
-    WiFi.setAutoConnect(true); 
+    WiFi.setAutoConnect(true);
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
+    WiFi.hostname(WIFI_HOST);
     //Serial.println("WIFI connecting");
     if (WiFi.waitForConnectResult() != WL_CONNECTED) {
       //Serial.println("Wifi failed to connect");
     } else {
-      IPAddress LAN_IP = WiFi.localIP(); 
+      IPAddress LAN_IP = WiFi.localIP();
       if (LAN_IP)
       {
         //Serial.println("Wifi Connected");
         //Serial.println("WEB Server LAN IP: " + LAN_IP.toString());
+        //Serial.println("WEB Server Hostname: " + WiFi.hostname());
         //Serial.println("WEB Server Port: " + String(WEB_PORT));
         if (!startAP)
         {
@@ -987,7 +1013,7 @@ void loop(void) {
   if (hasEnabled && millis() >= (enTime + 15000))
   {
     disableUSB();
-  } 
+  }
   dnsServer.processNextRequest();
   webServer.handleClient();
 }
