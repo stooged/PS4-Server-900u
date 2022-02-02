@@ -36,9 +36,13 @@ function loadPayloadData() // preload payload data
         }
         else
         {
-      showMessage("Failed to load " + payloadFile + " - " + this.status);
+            showMessage("Failed to load " + payloadFile + " - " + this.status);
         }};
         xhr.send();
+  }
+  else
+  {
+     showMessage("No payload set.");
   }
 }
 
