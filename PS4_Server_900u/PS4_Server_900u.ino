@@ -1,6 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <DNSServer.h>
+#include <ESP8266mDNS.h>
 #include <FS.h>
 #include "Loader.h"
 
@@ -953,6 +954,9 @@ digitalWrite(usbPin, LOW);
         //Serial.println("WEB Server LAN IP: " + LAN_IP.toString());
         //Serial.println("WEB Server Port: " + String(WEB_PORT));
         //Serial.println("WEB Server Hostname: " + WIFI_HOSTNAME);
+        String mdnsHost = WIFI_HOSTNAME;
+        mdnsHost.replace(".local","");
+        MDNS.begin(mdnsHost, LAN_IP);
         if (!startAP)
         {
           dnsServer.setTTL(30);
