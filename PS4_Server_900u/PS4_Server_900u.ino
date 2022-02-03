@@ -3,7 +3,12 @@
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
 #include <FS.h>
+
+#define USBCONTROL true // set to true if you are using usb control
+#define usbPin 13  // set the pin you want to use for usb control
+
 #include "Loader.h"
+#include "pages.h"
 
 ADC_MODE(ADC_VCC);
 MD5Builder md5;
@@ -11,7 +16,6 @@ DNSServer dnsServer;
 ESP8266WebServer webServer;
 boolean hasEnabled = false;
 long enTime = 0;
-int usbPin = 13;
 File upFile;
 String firmwareVer = "1.00";
 
@@ -260,9 +264,11 @@ bool loadFromSdCard(String path) {
     handleConsoleUpdate(Region);
     return true;
   }
-  if (instr(path,"/document/"))
+  if (instr(path,"/document/") && instr(path,"/ps4/"))
   {
-    path.replace("/document/" + split(path,"/document/","/ps4/") + "/ps4/", "/");
+     webServer.sendHeader("Location","http://" + WIFI_HOSTNAME + "/index.html");
+     webServer.send(302, "text/html", "");
+     return true;
   }
 
   if (path.endsWith("usbon") && webServer.method() == HTTP_POST)
@@ -294,18 +300,23 @@ bool loadFromSdCard(String path) {
   if (!dataFile) {
      if (path.endsWith("index.html") || path.endsWith("index.htm"))
      {
-       handleIndex();
-       return true;
+        webServer.send(200, "text/html", indexData);
+        return true;
+     }
+     if (path.endsWith("menu.html"))
+     {
+        webServer.send(200, "text/html", menuData);
+        return true;
      }
      if (path.endsWith("payloads.html"))
      {
-       handlePayloads();
-       return true;
+        handlePayloads();
+        return true;
      }
      if (path.endsWith("loader.html"))
      {
-       webServer.send(200, "text/html", loaderData);
-       return true;
+        webServer.send(200, "text/html", loaderData);
+        return true;
      }
     return false;
   }
@@ -544,13 +555,6 @@ void handleFileMan() {
 }
 
 
-void handleIndex() {
-  String image = "";
-  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><style>.btn { background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;}.btn:hover { background-color: RoyalBlue;}body { background-color: #1451AE; color: #ffffff; font-size: 14px;  font-weight: bold;  margin: 0 0 0 0.0;  overflow-y:hidden;  text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute;   top: 0;   right: 0; bottom: 0;  left: 0;  overflow-y:hidden;}</style></head><body><div class=\"main\"><iframe src=\"payloads.html\" height=\"100%\" width=\"100%\" frameborder=\"0\"></iframe></div></body></html>";
-  webServer.setContentLength(output.length());
-  webServer.send(200, "text/html", output);
-}
-
 
 void handlePayloads() {
   Dir dir = SPIFFS.openDir("/");
@@ -729,6 +733,10 @@ void handleCacheManifest() {
   if(!instr(output,"index.html\r\n"))
   {
     output += "index.html\r\n";
+  }
+  if(!instr(output,"menu.html\r\n"))
+  {
+    output += "menu.html\r\n";
   }
   if(!instr(output,"loader.html\r\n"))
   {
