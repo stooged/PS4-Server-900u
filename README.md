@@ -1,6 +1,10 @@
 # PS4 Server 9.00u
 
 
+<b>if you do not want to have to insert usb drives or wire things up then use <a href=https://github.com/stooged/ESP32-Server-900u>ESP32-Server-900u</a> and a ESP32-s2 board.</b>
+
+<br><br>
+
 this is a slight mod to <a href=https://github.com/stooged/PS4-Server-900>PS4 Server 9.00</a>
 
 the only files now required on the spiffs storage of the esp8266 are the .bin payloads, everything else is handled internally including generating a list of payloads.
