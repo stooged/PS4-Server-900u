@@ -305,11 +305,16 @@ bool loadFromSdCard(String path) {
   }
   
   String dataType = getContentType(path);
+  bool isGzip = false;
 
   File dataFile;
   dataFile = SPIFFS.open(path + ".gz", "r");
   if (!dataFile) {
     dataFile = SPIFFS.open(path, "r");
+  }
+  else
+  {
+    isGzip = true;
   }
   
   if (!dataFile) {
@@ -358,7 +363,13 @@ bool loadFromSdCard(String path) {
     webServer.sendHeader("Content-Disposition", "attachment; filename=\"" + dlFile + "\"");
     webServer.sendHeader("Content-Transfer-Encoding", "binary");
   }
-  
+  else
+  {
+    if (isGzip)
+    {
+      webServer.sendHeader("Content-Encoding", "gzip");
+    }
+  }
   if (webServer.streamFile(dataFile, dataType) != dataFile.size()) {
     //Serial.println("Sent less data than expected!");
   }
