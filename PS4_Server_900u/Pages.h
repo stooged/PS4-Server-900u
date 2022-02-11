@@ -265,3 +265,59 @@ if (window.location.pathname.startsWith("/document/"))
 </body>
 </html>
 )==";
+
+
+static const char autohenData[] PROGMEM = R"==(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP Server</title>
+<script>
+function setpayload(payload,title,waittime)
+{
+   sessionStorage.setItem('payload', payload);
+   sessionStorage.setItem('title', title);
+   sessionStorage.setItem('waittime', waittime);
+   window.open("loader.html", "_self");
+}
+</script>
+<style>
+.btn {
+    background-color: DodgerBlue;
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    font-size: 16px;
+    cursor: pointer;
+  font-weight: bold;
+}
+.btn:hover {
+    background-color: RoyalBlue;
+}
+
+body {
+  background-color: #1451AE;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 0 0 0.0;
+  overflow-y:hidden;
+  text-shadow: 3px 2px DodgerBlue;
+} 
+
+.main {
+  padding: 0px 0px;
+  position: absolute; 
+  top: 0; 
+  right: 0;
+  bottom: 0; 
+  left: 0;
+  overflow-y:hidden;
+}
+</style>
+</head>
+<body onload="setpayload('gldhen.bin','GoldHEN','12000');">
+</body>
+</html>
+)==";
