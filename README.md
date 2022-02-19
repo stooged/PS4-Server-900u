@@ -18,8 +18,6 @@ i have added the ability to switch off and on the usb device by using the pin D7
 the idea is to cut the 5v power to the usb drive and have it switched on and off by a relay which is controlled by the esp8266 device and switch it off and on during the initial exploit load which removes the need to plug and unplug the usb drive.
 
 
-<a href="https://youtu.be/WrJMKA0y-Lg" target="_blank">Video</a>
-
 
 you can make it with a usb A female to male cable, this is a basic diagram of how to set it up.
 
@@ -182,3 +180,8 @@ the end result:
 <img src=https://github.com/stooged/PS4-Server-900u/blob/main/Images/22.jpg><br>
 
 <br>
+
+
+# Video
+
+[![video](https://yt-embed.herokuapp.com/embed?v=WrJMKA0y-Lg)](https://youtu.be/WrJMKA0y-Lg)
