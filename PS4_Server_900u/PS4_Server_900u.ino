@@ -390,13 +390,6 @@ bool loadFromSdCard(String path) {
     webServer.sendHeader("Content-Disposition", "attachment; filename=\"" + dlFile + "\"");
     webServer.sendHeader("Content-Transfer-Encoding", "binary");
   }
-  else
-  {
-    if (isGzip)
-    {
-      webServer.sendHeader("Content-Encoding", "gzip");
-    }
-  }
   if (webServer.streamFile(dataFile, dataType) != dataFile.size()) {
     //Serial.println("Sent less data than expected!");
   }
