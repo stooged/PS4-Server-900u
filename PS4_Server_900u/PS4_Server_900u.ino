@@ -8,6 +8,12 @@
 #define USBCONTROL true // set to true if you are using usb control
 #define usbPin 13  // set the pin you want to use for usb control
 
+
+                     // use LITTLEFS not SPIFFS [ true / false ]
+#define USELFS false // LITTLEFS will be used instead of SPIFFS for the storage filesystem.
+                     // you can find the littlefs sketch data upload tool here https://github.com/earlephilhower/arduino-esp8266littlefs-plugin/releases
+
+
                     // enable internal goldhen.h [ true / false ]
 #define INTHEN true // goldhen is placed in the app partition to free up space on the storage for other payloads.
                     // with this enabled you do not upload goldhen to the board, set this to false if you wish to upload goldhen.
@@ -35,6 +41,15 @@
 #if INTHEN
 #include "goldhen.h"
 #endif
+
+
+#if USELFS
+#include <LittleFS.h>
+#define FILESYS LittleFS 
+#else
+#define FILESYS SPIFFS 
+#endif
+
 
 ADC_MODE(ADC_VCC);
 MD5Builder md5;
@@ -233,7 +248,7 @@ void handleBinload(String pload)
     else
     {
      delay(1000);
-     File dataFile = SPIFFS.open(pload, "r");
+     File dataFile = FILESYS.open(pload, "r");
      if (dataFile) {
        while (dataFile.available()) {
          client.write(dataFile.read());
@@ -247,7 +262,7 @@ void handleBinload(String pload)
   else
   {
      delay(1000);
-     File dataFile = SPIFFS.open(pload, "r");
+     File dataFile = FILESYS.open(pload, "r");
      if (dataFile) {
        while (dataFile.available()) {
          client.write(dataFile.read());
@@ -320,9 +335,9 @@ bool loadFromSdCard(String path) {
   bool isGzip = false;
 
   File dataFile;
-  dataFile = SPIFFS.open(path + ".gz", "r");
+  dataFile = FILESYS.open(path + ".gz", "r");
   if (!dataFile) {
-    dataFile = SPIFFS.open(path, "r");
+    dataFile = FILESYS.open(path, "r");
   }
   else
   {
@@ -422,7 +437,7 @@ void handleFileUpload() {
     }
     if (filename.equals("/config.ini"))
     {return;}
-    upFile = SPIFFS.open(filename, "w");
+    upFile = FILESYS.open(filename, "w");
     filename = String();
   } else if (upload.status == UPLOAD_FILE_WRITE) {
     if (upFile) {
@@ -451,7 +466,7 @@ void handleFwUpdate() {
     if (!filename.startsWith("/")) {
       filename = "/" + filename;
     }
-    upFile = SPIFFS.open(filename, "w");
+    upFile = FILESYS.open(filename, "w");
     filename = String();
   } else if (upload.status == UPLOAD_FILE_WRITE) {
     if (upFile) {
@@ -468,10 +483,10 @@ void handleFwUpdate() {
 
 void updateFw()
 {
-  if (SPIFFS.exists("/fwupdate.bin")) {
+  if (FILESYS.exists("/fwupdate.bin")) {
   File updateFile;
   //Serial.println("Update file found");
-  updateFile = SPIFFS.open("/fwupdate.bin", "r");
+  updateFile = FILESYS.open("/fwupdate.bin", "r");
  if (updateFile) {
   size_t updateSize = updateFile.size();
    if (updateSize > 0) {   
@@ -481,7 +496,7 @@ void updateFw()
     String md5Hash = md5.toString();
     //Serial.println("Update file hash: " + md5Hash);
     updateFile.close();
-    updateFile = SPIFFS.open("/fwupdate.bin", "r");
+    updateFile = FILESYS.open("/fwupdate.bin", "r");
   if (updateFile) {
   pinMode(BUILTIN_LED, OUTPUT);
   digitalWrite(BUILTIN_LED, LOW);
@@ -517,7 +532,7 @@ void updateFw()
   digitalWrite(BUILTIN_LED, HIGH);
   //Serial.println("Installed firmware hash: " + Update.md5String()); 
   //Serial.println("Update complete");
-  SPIFFS.remove("/fwupdate.bin");
+  FILESYS.remove("/fwupdate.bin");
   sendwebmsg("Uploaded file hash: " + md5Hash + "<br>Installed firmware hash: " + Update.md5String() + "<br><br>Update complete, Rebooting.");
   delay(1000);
   ESP.restart();
@@ -535,7 +550,7 @@ void updateFw()
   //Serial.println("Error, file is invalid");
   updateFile.close(); 
   digitalWrite(BUILTIN_LED, HIGH);
-  SPIFFS.remove("/fwupdate.bin");
+  FILESYS.remove("/fwupdate.bin");
   sendwebmsg("Error, file is invalid");
   return;    
   }
@@ -551,10 +566,10 @@ void updateFw()
 
 void handleFormat()
 {
-  //Serial.print("Formatting SPIFFS");
-  SPIFFS.end();
-  SPIFFS.format();
-  SPIFFS.begin();
+  //Serial.print("Formatting Filesystem");
+  FILESYS.end();
+  FILESYS.format();
+  FILESYS.begin();
   writeConfig();
   webServer.sendHeader("Location","/fileman.html");
   webServer.send(302, "text/html", "");
@@ -569,23 +584,22 @@ void handleDelete(){
     return;
   }
  String path = webServer.arg("file");
- if (SPIFFS.exists("/" + path) && path != "/" && !path.equals("config.ini")) {
-    SPIFFS.remove("/" + path);
+ if (FILESYS.exists("/" + path) && path != "/" && !path.equals("config.ini")) {
+    FILESYS.remove("/" + path);
  }
    webServer.sendHeader("Location","/fileman.html");
    webServer.send(302, "text/html", "");
 }
 
 
-
 void handleFileMan() {
-  Dir dir = SPIFFS.openDir("/");
-  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>File Manager</title><link rel=\"stylesheet\" href=\"style.css\"><style>body{overflow-y:auto;}</style><script>function statusDel(fname) {var answer = confirm(\"Are you sure you want to delete \" + fname + \" ?\");if (answer) {return true;} else { return false; }} </script></head><body><br><table id=filetable></table><script>var filelist = ["; 
+  Dir dir = FILESYS.openDir("/");
+  String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>File Manager</title><style type=\"text/css\">a:link {color: #ffffff; text-decoration: none;} a:visited {color: #ffffff; text-decoration: none;} a:hover {color: #ffffff; text-decoration: underline;} a:active {color: #ffffff; text-decoration: underline;} table {font-family: arial, sans-serif; border-collapse: collapse; width: 100%;} td, th {border: 1px solid #dddddd; text-align: left; padding: 8px;} button {display: inline-block; padding: 1px; margin-right: 6px; vertical-align: top; float:left;} body {background-color: #1451AE;color: #ffffff; font-size: 14px; padding: 0.4em 0.4em 0.4em 0.6em; margin: 0 0 0 0.0;}</style><script>function statusDel(fname) {var answer = confirm(\"Are you sure you want to delete \" + fname + \" ?\");if (answer) {return true;} else { return false; }}</script></head><body><br><table id=filetable></table><script>var filelist = ["; 
   int fileCount = 0;
   while(dir.next()){
     File entry = dir.openFile("r");
-    
-    String fname = String(entry.name()).substring(1);
+    String fname = String(entry.name());
+    if (fname.startsWith("/")){fname = fname.substring(1);}
     if (fname.length() > 0 && !fname.equals("config.ini"))
     {
       fileCount++;
@@ -608,7 +622,7 @@ void handleFileMan() {
 
 
 void handlePayloads() {
-  Dir dir = SPIFFS.openDir("/");
+  Dir dir = FILESYS.openDir("/");
   String output = "<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>ESP Server</title><script>function setpayload(payload,title,waittime){ sessionStorage.setItem('payload', payload); sessionStorage.setItem('title', title); sessionStorage.setItem('waittime', waittime);  window.open('loader.html', '_self');}</script><style>.btn {transition-duration: 0.4s; box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); background-color: DodgerBlue; border: none; color: white; padding: 12px 16px; font-size: 16px; cursor: pointer; font-weight: bold;} .btn:hover { background-color: RoyalBlue;} .slct{transition-duration: 0.4s;box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);text-align: center;-webkit-appearance: none;background-color: DodgerBlue;border: none;color: white;padding: 9px 1px;font-size: 16px;cursor: pointer;font-weight: bold;}.slct:hover {background-color: RoyalBlue;} body { background-color: #1451AE; color: #ffffff; font-size: 14px; font-weight: bold; margin: 0 0 0 0.0; overflow-y:hidden; text-shadow: 3px 2px DodgerBlue;} .main { padding: 0px 0px; position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow-y:hidden;} msg {color: #ffffff; font-weight: normal; text-shadow: none;} a {color: #ffffff; font-weight: bold;}</style></head><body><center><h1>9.00 Payloads</h1>";
   int cntr = 0;
   int payloadCount = 0;
@@ -623,7 +637,8 @@ void handlePayloads() {
 
   while(dir.next()){
     File entry = dir.openFile("r");
-    String fname = String(entry.name()).substring(1);
+    String fname = String(entry.name());
+    if (fname.startsWith("/")){fname = fname.substring(1);}
     if (fname.length() > 0)
     {
     if (fname.endsWith(".gz")) {
@@ -686,7 +701,7 @@ void handleConfig()
     if (webServer.hasArg("useap")){tmpua = "true";}
     if (webServer.hasArg("usewifi")){tmpcw = "true";}
     int USB_WAIT = webServer.arg("usbwait").toInt();
-    File iniFile = SPIFFS.open("/config.ini", "w");
+    File iniFile = FILESYS.open("/config.ini", "w");
     if (iniFile) {
     iniFile.print("\r\nAP_SSID=" + AP_SSID + "\r\nAP_PASS=" + AP_PASS + "\r\nWEBSERVER_IP=" + tmpip + "\r\nWEBSERVER_PORT=" + tmpwport + "\r\nSUBNET_MASK=" + tmpsubn + "\r\nWIFI_SSID=" + WIFI_SSID + "\r\nWIFI_PASS=" + WIFI_PASS + "\r\nWIFI_HOST=" + WIFI_HOSTNAME + "\r\nUSEAP=" + tmpua + "\r\nCONWIFI=" + tmpcw + "\r\nUSBWAIT=" + String(USB_WAIT) + "\r\n");
     iniFile.close();
@@ -805,7 +820,7 @@ void handleRebootHtml()
 
 void handleCacheManifest() {
   String output = "CACHE MANIFEST\r\n";
-  Dir dir = SPIFFS.openDir("/");
+  Dir dir = FILESYS.openDir("/");
   while(dir.next()){
     File entry = dir.openFile("r");
     String fname = String(entry.name()).substring(1);
@@ -845,7 +860,7 @@ void handleCacheManifest() {
 void handleInfo()
 {
   FSInfo fs_info;
-  SPIFFS.info(fs_info);
+  FILESYS.info(fs_info);
   float flashFreq = (float)ESP.getFlashChipSpeed() / 1000.0 / 1000.0;
   FlashMode_t ideMode = ESP.getFlashChipMode();
   float supplyVoltage = (float)ESP.getVcc()/ 1000.0 ;
@@ -865,7 +880,11 @@ void handleInfo()
   output += "Actual Flash size based on chip Id: " + formatBytes(ESP.getFlashChipRealSize()) + "<br>";
   output += "Flash frequency: " + String(flashFreq) + " MHz<br>";
   output += "Flash write mode: " + String((ideMode == FM_QIO ? "QIO" : ideMode == FM_QOUT ? "QOUT" : ideMode == FM_DIO ? "DIO" : ideMode == FM_DOUT ? "DOUT" : "UNKNOWN")) + "<br><hr>";
-  output += "###### File system (SPIFFS) ######<br><br>"; 
+#if USELFS
+  output += "###### File system (LittleFS) ######<br><br>";
+#else
+  output += "###### File system (SPIFFS) ######<br><br>";
+#endif
   output += "Total space: " + formatBytes(fs_info.totalBytes) + "<br>";
   output += "Used space: " + formatBytes(fs_info.usedBytes) + "<br>";
   output += "Block size: " + String(fs_info.blockSize) + "<br>";
@@ -886,7 +905,7 @@ void handleInfo()
 
 void writeConfig()
 {
-  File iniFile = SPIFFS.open("/config.ini", "w");
+  File iniFile = FILESYS.open("/config.ini", "w");
   if (iniFile) {
   String tmpua = "false";
   String tmpcw = "false";
@@ -908,9 +927,9 @@ digitalWrite(usbPin, LOW);
   //Serial.begin(115200);
   //Serial.setDebugOutput(true);
   //Serial.println("Version: " + firmwareVer);
-  if (SPIFFS.begin()) {
-  if (SPIFFS.exists("/config.ini")) {
-  File iniFile = SPIFFS.open("/config.ini", "r");
+  if (FILESYS.begin()) {
+  if (FILESYS.exists("/config.ini")) {
+  File iniFile = FILESYS.open("/config.ini", "r");
   if (iniFile) {
   String iniData;
     while (iniFile.available()) {
@@ -1012,7 +1031,7 @@ digitalWrite(usbPin, LOW);
   }
   else
   {
-    //Serial.println("No SPIFFS");
+    //Serial.println("No Filesystem");
   }
 
 
