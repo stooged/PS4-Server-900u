@@ -4,9 +4,15 @@
 #include <ESP8266mDNS.h>
 #include <FS.h>
 
+
+                     // use PsFree [ true / false ]
+#define PSFREE true  // use the newer psfree webkit exploit.
+                     // this is fairly stable but may fail which will require you to try and load the payload again.
+
+
                         // enable usb control [ true / false ]
 #define USBCONTROL true // set to true if you are using usb control
-#define usbPin 13  // set the pin you want to use for usb control
+#define usbPin 13       // set the pin you want to use for usb control
 
 
                      // use LITTLEFS not SPIFFS [ true / false ]
@@ -370,6 +376,14 @@ bool loadFromSdCard(String path) {
         webServer.send(200, "text/html", loader_gz, sizeof(loader_gz));
         return true;
      }
+#if PSFREE
+     if (path.endsWith("exploit.js"))
+     {
+        webServer.sendHeader("Content-Encoding", "gzip");
+        webServer.send(200, "text/javascript", psf_gz, sizeof(psf_gz));
+        return true;
+     }
+#endif
 #if INTHEN
      if (path.endsWith("gldhen.bin"))
      {
@@ -844,6 +858,10 @@ void handleCacheManifest() {
   if(!instr(output,"loader.html\r\n"))
   {
     output += "loader.html\r\n";
+  }
+  if(!instr(output,"exploit.js\r\n"))
+  {
+    output += "exploit.js\r\n";
   }
   if(!instr(output,"payloads.html\r\n"))
   {
